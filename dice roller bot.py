@@ -57,12 +57,12 @@ class Player:
             #rote
             return self.roll_set(dice, rote=True)
             
-        elif message.startswith('8again '):
+        elif message.startswith('8again'):
             #8again
             #checks if "rote" mentioned in message
             return self.roll_set(dice, again = 8, rote="rote" in message)
             
-        elif message.startswith('9again '):
+        elif message.startswith('9again'):
             #9again
             #checks if "rote" mentioned in message
             return self.roll_set(dice, again = 9, rote="rote" in message)
@@ -165,6 +165,9 @@ async def on_message(message):
 
         #make roll by choosing random bumber between 1 and 10
         value = random.randrange(1, 11)
+
+        #clear last roll and append chance die result
+        char.last_roll = []
         char.last_roll.append("chance die: " + str(value))
 
         #Give value
