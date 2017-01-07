@@ -194,7 +194,7 @@ class Character:
         return messages
 
     def get_last_roll(self):
-        #used for getting results of last roll made by speaker
+        #used for getting results of last roll made
         if self.last_roll == []:
-            return ["No last roll."]
-        return self.last_roll
+            return [self.ID + " has no previous rolls."]
+        return char.last_roll
