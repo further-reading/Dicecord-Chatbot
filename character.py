@@ -197,4 +197,4 @@ class Character:
         #used for getting results of last roll made
         if self.last_roll == []:
             return [self.ID + " has no previous rolls."]
-        return char.last_roll
+        return self.last_roll
