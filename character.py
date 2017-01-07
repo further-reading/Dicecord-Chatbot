@@ -195,7 +195,6 @@ class Character:
 
     def get_last_roll(self):
         #used for getting results of last roll made by speaker
-        if self.last_roll == "":
-            console.config(text= self.ID + " has Saved Rolls.")
-            return
+        if self.last_roll == []:
+            return ["No last roll."]
         return self.last_roll
