@@ -3,7 +3,7 @@
 import random
 
 class Character:
-    def __init__(self, ID, stats={}):
+    def __init__(self, ID):
         '''
         Class for holding players, making their rolls and saving their last rolls
         '''
@@ -12,80 +12,6 @@ class Character:
         self.ID = ID
         #results of last roll, starts blank
         self.last_roll = []
-        self.stats = stats
-        
-        ##place holder code indicating other attributes which need to be created
-        #for full implementation the imported character details should give "current" ratings
-        #self.mana = {'current': 0, 'max': 0} #max should be calculated based on supplied gnosis
-        #self.health = [0, #max - will be calculated based on relevant attributes
-                       #0, #bashing
-                       #0, #lethal
-                       #0] #agg
-        #self.xp = {"standard": 0, "arcane": 0}
-        #self.beats = {"standard": 0, "arcane": 0}
-        
-    def get_stat(self, stat):
-        '''
-        gets value of a stat
-        string -> int
-        string -> string if error
-        '''
-        try: s = self.stats[stat.lower()]
-        except KeyError:
-            #occurs if stats not present, will return a not found string
-            return stat + " not found."
-        return s
-
-    def earn_xp(self, xp_type, amount):
-        '''
-        Adds xp
-        '''
-        pass
-        self.xp[xp_type] += amount
-
-    def spend_xp(self, stat, xp_type):
-        '''
-        Spend xp to update stat.
-        '''
-        pass
-
-    def earn_beat(self, beat_type):
-        '''
-        Earn a beat, add 1 xp if 5 beats reached
-        '''
-        pass
-        self.beats[beat_type] += 1
-        if self.beats[beat_type] == 5:
-            self.beats[beat_type] = 0
-            self.earn_xp(beat_type, 1)
-            return "Beat converted to xp."
-        return "Beat added."
-    
-    def state_health(self):
-        '''
-        States current character health
-        '''
-        pass
-        out = ["Bashing: " + str(self.health[1]), "Lethal: " + str(self.health[2]), "Agg: " + str(self.health[3])]
-        for element in out:
-            element += "/" + str(self.health[0])
-        return out
-    
-    def change_health(self, amount, dam_type):
-        '''
-        Updates current health
-        '''
-        pass
-        if dam_type <= 0 or dam_type > 3:
-            return "Invalid input."
-        self.health[dam_type] += amount
-        if self.health[dam_type] > self.health[0]:
-            over = abs(self.health[0] - self.health[dam_type])
-            self.health[dam_type] = self.health[0]
-            if dam_type != 3:
-                self.change_health(over, dam_type + 1)
-                
-        self.state_health()
 
     def roll_set(self, dice, rote=False, again=10, quiet=False):
         '''
