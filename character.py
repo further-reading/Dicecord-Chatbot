@@ -95,42 +95,64 @@ class Character:
         again: int, which die faces explode
         quiet: Boolean about whether quiet mode will be used
         Returns a list of strings stating each die result and then total successes
-        If quiet mode, only returns total successes
+        If quiet mode, returns a one element list that displays returns total successes and result of each die.
         '''
         
-        #self.last_roll field collects the value of each rolled die
-        #initialised to blank here, will be set in each self.roll_die call
+        # Check that more than 1 die selected
+        if dice < 1:
+            return ['Select at least 1 die.']
+
+        # self.last_roll field collects the value of each rolled die
+        # initialised to blank here, will be set in each self.roll_die call
         self.last_roll = []
         
-        #successes collector variable 
+        # successes collector variable 
         successes = 0
         
-        #fail collector in case it is a rote
+        # fail collector in case it is a rote
         fails = []
 
         
         for die in range(0,dice):
+            # roll each die
             result = self.roll_die(again)
             if result == 0:
-                #if not a success adds entry to fail list for rote reroll
+                # if not a success adds entry to fail list for rote reroll
                 fails += ["fail"]
-                #add result to success counter
             else:
-                #add the result to successes counter
+                # add the result to successes counter
                 successes += result
 
         if rote:
-            #if a rote all failed dice are rerolled once
+            # if a rote all failed dice are rerolled once
             for die in fails:
                 successes += self.roll_die(again, rote_reroll = True)
 
-        #send message
+        # send message
         messages = []
         
         if not quiet:
+            # add all messages if quiet mode
             messages.extend(self.last_roll)
 
-        messages.append("Total Successes for " + self.ID + " : " + str(successes))
+        else:
+            # add a summary message
+            out = self.stats['user id'] + " rolled " + str(dice) + " dice and got " + str(successes) + " successes."
+            for message in self.last_roll:
+                # find dice value
+                value = ''.join(x for x in message[len(self.stats['user id']) + 1:] if x.isdigit())
+                if "exploded" in message:
+                    out += "(" + value + ")"
+                elif "rote" in message:
+                    out += " Rote:" + value
+                else:
+                    out += " " + value
+
+            messages.append(out)
+                
+
+        # add total results message
+        messages.append("Total Successes for " + self.stats['user id'] + " : " + str(successes))
         
         return messages
             
