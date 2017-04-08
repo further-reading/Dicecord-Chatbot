@@ -28,7 +28,7 @@ The bot will respond to any applicable commands made in the server or as a DM.
 * **"!!one"** - Rolls a single 10-sided die and returns the value to the channel where the command was spoken. Does not overwrite last_roll.  
 * **"!!chance"** - Rolls a chance die, overwites the speaker's last_roll with result. Returns die result and states whether it was a botch, failure or success to the channel where the command was spoken.  
 * **"!![roll type] n"** - Rolls n dice based on conditions for [roll type]. Returns each die result every 0.5 seconds to the channel where the command was spoken and then states total number of successes. Also overwrites the speaker's last_roll result.  
-* **"##[roll type] n"** - Quite mode roll. Just like "!![roll type] n" but it only gives total successes to channel. Also overwrites the speaker's last_roll result, so value of each die can be requested using "!last_roll".  
+* **"##[roll type] n"** - Quite mode roll. Just like "!![roll type] n" but it gives results in a single line.  
 
 ## Notes
 The "!last_roll" command works by creating a list of every user that sends a command to the bot. I tend to start a new instance of the bot locally during a game and shut it down after so it isn't a big deal, but if you plan to have the bot run persistently or on multiple channels it might cause issues.
