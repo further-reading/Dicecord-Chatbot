@@ -172,7 +172,7 @@ async def on_message(message):
         await client.send_message(message.author, "Write'!type' to get a list of all valid roll types and commands.")
         await client.send_message(message.author, "For quiet mode, use ## instead.")
         await client.send_message(message.author, "In loud mode, the bot will return the value of one roll every 0.5 seconds before stating total successes.")
-        await client.send_message(message.author, "In quiet mode it will only return total successes.")
+        await client.send_message(message.author, "In quiet mode it will return the results in a single line.")
         await client.send_message(message.author, "To get the die values for your last roll, type '!last_roll'")
         await client.send_message(message.author, "You can send commands in this private chat if you don't want to spam the channel.")
         
