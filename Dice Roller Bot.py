@@ -184,4 +184,5 @@ async def on_ready():
     print(client.user.id)
     print('------')
 
-client.run("Bot Token")
+###EDIT THIS####
+client.run('BOTTOKEN')
