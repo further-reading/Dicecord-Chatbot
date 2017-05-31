@@ -12,6 +12,22 @@ class Character:
         self.ID = ID
         #results of last roll, starts blank
         self.last_roll = []
+        
+        self.goodMessages = ["The Lie cannot withstand your will, [userID]!",
+                    "Reality is yours to command, [userID]!",
+                    "You should take the beat, [userID].",
+                    "Aren't I a good bot, [userID]?",
+                    "[userID] is a conduit to the supernal!",
+                    "Did you hack me, [userID]?",
+                    "[userID], if you were still a sleeper the majesty of this action would have awoken you!"]
+        self.badMessages = ["[userID]'s nimbus looks like a wet dishrag.",
+                   "The lie constricts your potential, [userID].",
+                   "Don't blame your bad luck on me, [userID]! I'm just a random number generator.",
+                   "That was just a practice roll, right [userID]?",
+                   "[userID] rolls like a diary farmer.",
+                   "Ask for a dramatic failure [userID], you know you want to!",
+                   "[userID], I hope that wasn't an important roll ...",
+                   "[userID]'s watchtower called out to the wrong soul."]
 
     def roll_set(self, dice, rote=False, again=10, quiet=False):
         '''
@@ -63,10 +79,10 @@ class Character:
 
         else:
             # add a summary message
-            out = self.stats['user id'] + " rolled " + str(dice) + " dice and got " + str(successes) + " successes."
+            out = self.ID + " rolled " + str(dice) + " dice and got " + str(successes) + " successes."
             for message in self.last_roll:
                 # find dice value
-                value = ''.join(x for x in message[len(self.stats['user id']) + 1:] if x.isdigit())
+                value = ''.join(x for x in message[len(self.ID) + 1:] if x.isdigit())
                 if "exploded" in message:
                     out += "(" + value + ")"
                 elif "rote" in message:
@@ -78,9 +94,29 @@ class Character:
                 
 
         # add total results message
-        messages.append("Total Successes for " + self.stats['user id'] + " : " + str(successes))
+        if not quiet:
+            messages.append("Total Successes for " + self.ID + " : " + str(successes))
+        
+        # check for positive or nagative message
+        if successes == 0:
+            messages.append(self.bot_message("bad"))
+        elif successes >= 5:
+            messages.append(self.bot_message("good"))
         
         return messages
+        
+    def bot_message(self, messagetype):
+        '''
+        Randomly sends a positive/negative message with very good or very bad rolls
+        :param type: "good" or "bad"
+        :return: none
+        '''
+        if messagetype == 'good':
+                out = random.choice(self.goodMessages)
+        else:
+                out = random.choice(self.badMessages)
+
+        return out.replace("[userID]", self.ID)
             
     def roll_die(self, again = 10, explode_reroll = False, rote_reroll = False):
         '''
