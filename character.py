@@ -169,10 +169,13 @@ class Character:
         ##check if failure, botch or success
         if value == 10:
             messages.append(self.ID + " got a success!")
+            messages.append(self.bot_message("good"))
         elif value == 1:
             messages.append(self.ID + " botched!")
+            messages.append(self.bot_message("bad"))
         else:
             messages.append(self.ID + " failed!")
+            messages.append(self.bot_message("bad"))
 
         #Give result
         return messages
