@@ -6,8 +6,8 @@ Python based diceroller bot for discord.
 To activate the bot go to https://discordapp.com/oauth2/authorize?client_id=319289665347911680&scope=bot&permissions=0
 
 The bot will respond to any applicable commands made in the server or as a DM.  
-* **"!help"** - Sends DM to speaker with help text.  
-* **"!type"** - Sends DM to speaker with the types of rolls available.  
+* **"!help"** - PM only. Replies with help text.  
+* **"!type"** - PM only. Replies to with the types of rolls available.  
 * **"!![roll type] n"** - Rolls n dice based on conditions for [roll type]. Returns each die result every 0.5 seconds to the channel where the command was spoken and then states total number of successes. 
 * **"##[roll type] n"** - Quite mode roll. Just like "!![roll type] n" but it gives results in a single line.   
 * **"!!one"** - Rolls a single 10-sided die and returns the value to the channel where the command was spoken.
