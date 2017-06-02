@@ -202,10 +202,18 @@ You need to edit these for every channel you are in. For example, you can set yo
 Such data will never be accessed or analaysed, but feel free to delete them at any time by writing *!delete user* in the channel you want deleted.
 You can also use *!delete channel* and *!delete server* to delete all players' settings in a specific channel or server, but please make sure other players are okay with you performing these actions!
 ''')
+            elif message.content.startswith('!info'):
+                    #info text
+                    #replies in PM
+                    await client.send_message(message.author, '''Dicecord is a python based bot for rolling dice following the Chronicles of Darkenss ruleset.
+It was built by Roy Healy.
+Built using Discord.py package and running on Pythion 3.5.
+See https://github.com/further-reading/discord-dirceroller-bot for source code.''')
+                    
             else:
                     #Give PM instructions
                     await client.send_message(message.author, "Write !help for help or !type for list of roll types")
-           return
+            return
             
     # If not a PM or message from the bot, check for command
     if message.content == "!!one":
