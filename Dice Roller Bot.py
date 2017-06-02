@@ -210,7 +210,7 @@ You can also use *!delete channel* and *!delete server* to delete all players' s
                     #info text
                     #replies in PM
                     await client.send_message(message.author, '''Dicecord is a python based bot for rolling dice following the Chronicles of Darkenss ruleset.
-It was built by Roy Healy.
+(c) Roy Healy. Distributed under GNU General Public License v3.0.
 Built using Discord.py package and running on Pythion 3.5.
 See https://github.com/further-reading/discord-dirceroller-bot for source code.''')
                     
