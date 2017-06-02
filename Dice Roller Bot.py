@@ -164,42 +164,10 @@ async def on_message(message):
         return
 
     char = check_server(message)
-
-    if message.content == "!!one":
-        #roll a single die, no successes calculated and not added to roll history
-
-        result = char.roll_special()
-
-        #Module will always use self.ID, but {0.author.mention} works better for bot implementation
-        out = result.replace(char.ID, "{0.author.mention}")
-        await client.send_message(message.channel, out.format(message))
-
-    elif message.content=="!!chance":
-        #make a chance roll
-
-        results = char.roll_chance()
-
-        for result in results:
-            #Module will always use self.ID, but {0.author.mention} works better for bot implementation
-            out = result.replace(char.ID, "{0.author.mention}")
-            await client.send_message(message.channel, out.format(message))
-        
-    elif message.content.startswith('!!') or message.content.startswith('##'):
-        
-        #make roll
-        results = parse_roll(char, message.content)
-        
-        for result in results:
-            #{0.author.mention} works better for bot implementation
-            out = result.replace(char.ID, "{0.author.mention}")
-            await client.send_message(message.channel, out.format(message))
-            time.sleep(0.5)
-
-
-    elif message.content.startswith('!type'):
-        #type help text
-        #replies in PM
-        await client.send_message(message.author,
+    if message.server == None:
+            # Private Message
+            if message.content.startswith('!type'):
+                    await client.send_message(message.author,
                                   '''!!roll: a normal roll
 !!rote: a rote roll (failures rerolled once)
 !!9again: 9s explode!
@@ -215,15 +183,14 @@ To roll a chance die, write '!!chance'
 To roll a single die, but not as part of an action, write '!!one'
 For quiet mode use ## instead of !!
 There is no quiet mode for '!!chance' or !'!!one''')
-        
 
-    elif message.content.startswith('!help'):
-        #help text
-        #replies in PM
-        await client.send_message(message.author,
+            elif message.content.startswith('!help'):
+                    #help text
+                    #replies in PM
+                    await client.send_message(message.author,
         '''To make a roll type *!![type] n* or *##[type] n* where'n' is the number of dice you want to roll and [type] is the type of roll.
 There are special commands for chance rolls or generic single dice roll.
-Write '!type' to get a list of all valid roll types and commands.
+Write '!type' to me here to get a list of all valid roll types and commands.
 Using !! specifies loud mode, using ## specifies quiet mode.
 In loud mode, the bot will return the value of one roll every 0.5 seconds before stating total successes.
 In quiet mode it will return the results in a single line.
@@ -235,18 +202,56 @@ You need to edit these for every channel you are in. For example, you can set yo
 Such data will never be accessed or analaysed, but feel free to delete them at any time by writing *!delete user* in the channel you want deleted.
 You can also use *!delete channel* and *!delete server* to delete all players' settings in a specific channel or server, but please make sure other players are okay with you performing these actions!
 ''')
+            else:
+                    #Give PM instructions
+                    await client.send_message(message.author, "Write !help for help or !type for list of roll types")
+           return
+            
+    # If not a PM or message from the bot, check for command
+    if message.content == "!!one":
+        #roll a single die, no successes calculated and not added to roll history
+
+        result = char.roll_special()
+
+        # {0.author.mention} works better for bot implementation
+        out = result.replace(char.ID, "{0.author.mention}")
+        await client.send_message(message.channel, out.format(message))
+
+    elif message.content=="!!chance":
+        #make a chance roll
+
+        results = char.roll_chance()
+
+        for result in results:
+            # {0.author.mention} works better for bot implementation
+            out = result.replace(char.ID, "{0.author.mention}")
+            await client.send_message(message.channel, out.format(message))
+        
+    elif message.content.startswith('!!') or message.content.startswith('##'):
+        
+        #make roll
+        results = parse_roll(char, message.content)
+        
+        for result in results:
+            # {0.author.mention} works better for bot implementation
+            out = result.replace(char.ID, "{0.author.mention}")
+            await client.send_message(message.channel, out.format(message))
+            time.sleep(0.5)
 
     elif message.content.startswith('!splat'):
         out = set_splat(message)
-        await client.send_message(message.author, out)
+        if out:
+                await client.send_message(message.author, out)
 
     elif message.content.startswith('!flavour'):
         out = set_flavour(message)
-        await client.send_message(message.author, out)
+        if out:
+                await client.send_message(message.author, out)
 
     elif message.content.startswith("!delete"):
             out = delete_content(message)
-            await client.send_message(message.author, out)
+            if out:
+                    await client.send_message(message.author, out)
             
         
 
