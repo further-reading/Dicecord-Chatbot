@@ -10,17 +10,35 @@ class Character:
         #Some means of identifying user
         #Generally either numeric ID or discord username depending on bot versus client implementation
         self.ID = ID
-        #results of last roll, starts blank
-        self.last_roll = []
+        self.rolls = []
+        self.splat = ''
+        self.flavour = True
         
-        self.goodMessages = ["The Lie cannot withstand your will, [userID]!",
+        self.goodMessages = ["You should take the beat, [userID].",
+                    "Aren't I a good bot, [userID]?",
+                    "Did you hack me, [userID]?",
+                    "Masterfully done, [userID]!",
+                    "Don't let this luck go to waste, [userID]."]
+        self.badMessages = ["Don't blame your bad luck on me, [userID]! I'm just a random number generator.",
+                   "That was just a practice roll, right [userID]?",
+                   "[userID] rolls like a diary farmer.",
+                   "Ask for a dramatic failure [userID], you know you want to!",
+                   "[userID], I hope that wasn't an important roll ..."]
+
+    def changeSplat(self, splat):
+        if splat == 'mage':
+            self.splat = 'mage'
+            self.goodMessages = ["Masterfully done, [userID]!",
+                    "Don't let this luck go to waste, [userID].",
+                    "The Lie cannot withstand your will, [userID]!",
                     "Reality is yours to command, [userID]!",
                     "You should take the beat, [userID].",
                     "Aren't I a good bot, [userID]?",
                     "[userID] is a conduit to the supernal!",
                     "Did you hack me, [userID]?",
                     "[userID], if you were still a sleeper the majesty of this action would have awoken you!"]
-        self.badMessages = ["[userID]'s nimbus looks like a wet dishrag.",
+
+            self.badMessages = ["[userID]'s nimbus looks like a wet dishrag.",
                    "The lie constricts your potential, [userID].",
                    "Don't blame your bad luck on me, [userID]! I'm just a random number generator.",
                    "That was just a practice roll, right [userID]?",
@@ -28,6 +46,13 @@ class Character:
                    "Ask for a dramatic failure [userID], you know you want to!",
                    "[userID], I hope that wasn't an important roll ...",
                    "[userID]'s watchtower called out to the wrong soul."]
+
+            return "Splat set to Mage in "
+
+        elif splat == '':
+            return "No splat entered, please retry."
+        else:
+            return "No custom settings for " + splat + ". Messaging unchanged in "
 
     def roll_set(self, dice, rote=False, again=10, quiet=False):
         '''
@@ -46,7 +71,7 @@ class Character:
 
         # self.last_roll field collects the value of each rolled die
         # initialised to blank here, will be set in each self.roll_die call
-        self.last_roll = []
+        self.rolls = []
         
         # successes collector variable 
         successes = 0
@@ -73,14 +98,14 @@ class Character:
         # send message
         messages = []
         
-        if not quiet:
-            # add all messages if quiet mode
-            messages.extend(self.last_roll)
-
-        else:
+        if quiet:
             # add a summary message
-            out = self.ID + " rolled " + str(dice) + " dice and got " + str(successes) + " successes."
-            for message in self.last_roll:
+            out = self.ID + " rolled " + str(dice) + " dice and got " + str(successes) + " success"
+            if successes != 1:
+                out += "es."
+            else:
+                out += "."
+            for message in self.rolls:
                 # find dice value
                 value = ''.join(x for x in message[len(self.ID) + 1:] if x.isdigit())
                 if "exploded" in message:
@@ -95,13 +120,17 @@ class Character:
 
         # add total results message
         if not quiet:
+            for roll in self.rolls:
+                messages.append(roll)
+            
             messages.append("Total Successes for " + self.ID + " : " + str(successes))
         
         # check for positive or nagative message
-        if successes == 0:
-            messages.append(self.bot_message("bad"))
-        elif successes >= 5:
-            messages.append(self.bot_message("good"))
+        if self.flavour:
+            if successes == 0:
+                messages.append(self.bot_message("bad"))
+            elif successes >= 5:
+                messages.append(self.bot_message("good"))
         
         return messages
         
@@ -125,16 +154,16 @@ class Character:
         Handles explosions and gives custom last_roll text for rote/explosions
         '''
         value = random.randrange(1, 11)
-    
+
         #recording value, adds details for rote/reroll
         if explode_reroll and rote_reroll:
-            self.last_roll.append(self.ID + " rolled rote exploded die: " + str(value))
+            self.rolls.append(self.ID + " rolled rote exploded die: " + str(value))
         elif explode_reroll:
-            self.last_roll.append(self.ID + " rolled exploded die: " + str(value))
+            self.rolls.append(self.ID + " rolled exploded die: " + str(value))
         elif rote_reroll:
-            self.last_roll.append(self.ID + " rolled rote die: " + str(value))
+            self.rolls.append(self.ID + " rolled rote die: " + str(value))
         else:
-            self.last_roll.append(self.ID + " rolled " + str(value))
+            self.rolls.append(self.ID + " rolled " + str(value))
 
         #checks for success/explosions
         if value >= again:
@@ -159,29 +188,22 @@ class Character:
         #make roll by choosing random bumber between 1 and 10
         value = random.randrange(1, 11)
 
-        #clear last roll and append chance die result
-        self.last_roll = []
-        self.last_roll.append("chance die: " + str(value))
-
         #Give value
         messages = [self.ID + "chance rolled " + str(value)]
 
         ##check if failure, botch or success
         if value == 10:
             messages.append(self.ID + " got a success!")
-            messages.append(self.bot_message("good"))
+            if self.flavour:
+                messages.append(self.bot_message("good"))
         elif value == 1:
             messages.append(self.ID + " botched!")
-            messages.append(self.bot_message("bad"))
+            if self.flavour:
+                messages.append(self.bot_message("bad"))
         else:
             messages.append(self.ID + " failed!")
-            messages.append(self.bot_message("bad"))
+            if self.flavour:
+                messages.append(self.bot_message("bad"))
 
         #Give result
         return messages
-
-    def get_last_roll(self):
-        #used for getting results of last roll made
-        if self.last_roll == []:
-            return [self.ID + " has no previous rolls."]
-        return self.last_roll
