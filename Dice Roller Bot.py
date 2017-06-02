@@ -3,7 +3,7 @@
 #Current features:
 #   Dice rolls (loud or quiet)
 #   Help messaging
-#   Send details of last roll
+#   Flavour text
     
 
 import discord
@@ -12,7 +12,10 @@ import time
 from character import Character
 
 client = discord.Client()
-players = []
+# Collects channel IDs and player IDs
+# This is to allow for saving the splat used for messaging options
+# {serverID : {playerID: char}}
+servers = {}
 
 def parse_roll(player, message):
         '''
@@ -71,20 +74,88 @@ def parse_roll(player, message):
             return [player.ID + " error: Unrecognized Command!"]
     
 
-def check_player(author):
+def check_server(message):
     '''
     Helper function that finds character object associated with a user.
+    Users have a seperate character object for each channel in each server.
     '''
-    global players
-    
-    for char in players:
-        if char.ID == author:
-            return char
-        
-    #if no player by this name found, new object created and added to global list
-    char = Character(author)
-    players.append(char)
+    global servers
+    # {serverID : {channelID : {playerID: character, playerID: character}}}
+    # check if message server is known
+    if message.server in servers:
+            # check if channel is known
+            if message.channel in servers[message.server]:
+                    # check if player is known
+                    if message.author in servers[message.server][message.channel]:
+                            # return character
+                            return servers[message.server][message.channel][message.author]
+                    else: # if player not known make new entry
+                            char = Character(str(message.author))
+                            servers[message.server][message.author] = char
+            else: #make a new channel entry
+                    char = Character(str(message.author))
+                    servers[message.server][message.channel] = {message.author:char}
+
+    else: # make new server entry
+            char = Character(str(message.author))
+            servers[message.server] = {message.channel:{message.author : char}}
     return char
+
+def set_splat(message):
+        '''
+        Allows user to set game type for flavour text.
+        '''
+        char = check_server(message)
+        new_splat = message.content[7:].lower()
+        if new_splat == "check":
+                if char.splat:
+                        return "Splat is currently set to " + char.splat.upper() + " in server " + str(message.server) + " - " + str(message.channel)
+                else:
+                        return "Splat is currently not set in server " + str(message.server) + " - " + str(message.channel)
+                
+        
+        else:
+                return char.changeSplat(new_splat) + str(message.server) + " - " + str(message.channel)
+
+def set_flavour(message):
+        '''
+        Allows user to set game type for flavour text.
+        '''
+        char = check_server(message)
+        setting = message.content[9:].lower()
+        if 'off' in setting:
+                char.flavour = False
+                return "Flavour turned off in server " + str(message.server) + " - " + str(message.channel)
+        
+        elif 'on' in setting:
+                char.flavour = True
+                return "Flavour turned on in server " + str(message.server) + " - " + str(message.channel)
+        
+        elif 'check' in setting:
+                if char.flavour:
+                        return "Flavour turned on in server " + str(message.server) + " - " + str(message.channel)
+                else:
+                        return "Flavour turned off in server " + str(message.server) + " - " + str(message.channel)
+        else:
+                return "Unknown command."
+
+def delete_content(message):
+        check_server(message)
+        if "user" in message.content:
+                del servers[message.server][message.channel][message.author]
+                return "Details for " + str(message.author) + " removed from " + str(message.server) + " - " + str(message.channel)
+
+        elif "channel" in message.content:
+                del servers[message.server][message.channel]
+                return "All user details for channel " + str(message.channel) + " removed from " + str(message.server)
+
+        elif "server" in message.content:
+                del servers[message.server]
+                return "All user details for all channels removed from " + str(message.server)
+
+        else:
+                return "Unkown Command"
+        
 
 @client.event
 async def on_message(message):
@@ -92,9 +163,10 @@ async def on_message(message):
     if message.author == client.user:
         return
 
+    char = check_server(message)
+
     if message.content == "!!one":
         #roll a single die, no successes calculated and not added to roll history
-        char = check_player(str(message.author))
 
         result = char.roll_special()
 
@@ -104,8 +176,6 @@ async def on_message(message):
 
     elif message.content=="!!chance":
         #make a chance roll
-        #check who is talking
-        char = check_player(str(message.author))
 
         results = char.roll_chance()
 
@@ -115,66 +185,69 @@ async def on_message(message):
             await client.send_message(message.channel, out.format(message))
         
     elif message.content.startswith('!!') or message.content.startswith('##'):
-        #this will be one a main roll commands
-        
-        #check who is talking 
-        char = check_player(str(message.author))
         
         #make roll
         results = parse_roll(char, message.content)
         
         for result in results:
-            #Module will always use self.ID, but {0.author.mention} works better for bot implementation
+            #{0.author.mention} works better for bot implementation
             out = result.replace(char.ID, "{0.author.mention}")
             await client.send_message(message.channel, out.format(message))
             time.sleep(0.5)
 
 
-    elif message.content=='!last_roll':
-        #used for getting results of last roll made by speaker
-        
-        #check who is talking
-        char = check_player(str(message.author))
-        
-        for result in char.get_last_roll():
-            #Module will always use self.ID, but {0.author.mention} works better for bot implementation
-            out = result.replace(char.ID, "{0.author.mention}")
-            await client.send_message(message.channel, out.format(message))
-
-
     elif message.content.startswith('!type'):
         #type help text
         #replies in PM
-        await client.send_message(message.author, "!!roll: a normal roll")
-        await client.send_message(message.author, "!!rote: a rote roll (failures rerolled once)")
-        await client.send_message(message.author, "!!9again: 9s explode!")
-        await client.send_message(message.author, "!!8again: 8s explode!")
-        await client.send_message(message.author, "!!9againrote: 9s explode and failures are rerolled once!")
-        await client.send_message(message.author, "!!8againrote: 8s explode and failures are rerolled once!")
-        await client.send_message(message.author, "Example:")
-        await client.send_message(message.author, "!!roll 8")
-        await client.send_message(message.author, "Rolls 8 dice. Not a rotes, 10s explode!")
-        await client.send_message(message.author, "!!9again 5")
-        await client.send_message(message.author, "Rolls 5 dice, 9s and 10s explode!")
-        await client.send_message(message.author, "To roll a chance die, write '!!chance'")
-        await client.send_message(message.author, "To roll a single die, but not as part of an action, write '!!one'")
-        await client.send_message(message.author, "For quiet mode use ## instead of !!")
-        await client.send_message(message.author, "There is no quiet mode for '!!chance' or !'!!one'")
+        await client.send_message(message.author,
+                                  '''!!roll: a normal roll
+!!rote: a rote roll (failures rerolled once)
+!!9again: 9s explode!
+!!8again: 8s explode!
+!!9againrote: 9s explode and failures are rerolled once!
+!!8againrote: 8s explode and failures are rerolled once!
+Example:
+!!roll 8
+Rolls 8 dice. Not a rotes, 10s explode!
+!!9again 5
+Rolls 5 dice, 9s and 10s explode!
+To roll a chance die, write '!!chance'
+To roll a single die, but not as part of an action, write '!!one'
+For quiet mode use ## instead of !!
+There is no quiet mode for '!!chance' or !'!!one''')
         
 
     elif message.content.startswith('!help'):
         #help text
         #replies in PM
-        await client.send_message(message.author, "To make a roll type '!![type] n'")
-        await client.send_message(message.author, "'n' is the number of dice you want to roll.")
-        await client.send_message(message.author, "'!![type]' is the type of roll.")
-        await client.send_message(message.author, "There are special commands for chance rolls or generic single dice roll.")
-        await client.send_message(message.author, "Write'!type' to get a list of all valid roll types and commands.")
-        await client.send_message(message.author, "For quiet mode, use ## instead.")
-        await client.send_message(message.author, "In loud mode, the bot will return the value of one roll every 0.5 seconds before stating total successes.")
-        await client.send_message(message.author, "In quiet mode it will return the results in a single line.")
-        await client.send_message(message.author, "To get the die values for your last roll, type '!last_roll'")
-        await client.send_message(message.author, "You can send commands in this private chat if you don't want to spam the channel.")
+        await client.send_message(message.author,
+        '''To make a roll type *!![type] n* or *##[type] n* where'n' is the number of dice you want to roll and [type] is the type of roll.
+There are special commands for chance rolls or generic single dice roll.
+Write '!type' to get a list of all valid roll types and commands.
+Using !! specifies loud mode, using ## specifies quiet mode.
+In loud mode, the bot will return the value of one roll every 0.5 seconds before stating total successes.
+In quiet mode it will return the results in a single line.
+Regardless of mode, by default the bot will send flavour text if you get 0 successes or 5+ successes.
+You can specify splat specific flavour text, for example you could set it so a Mage character gets Mage themed flavour text. To do so write *!splat [splat name]*. Currently only valid for mage.
+You can turn flavour text off by writing *!flavour off*. You can turn it back on with *!flavour on*.
+The bot will remember these settings unless the bot server was reset. To check at any time write *!flavour check* or *!splat check*.
+You need to edit these for every channel you are in. For example, you can set your splat to Vampire in #Vampire and Mage in #Mage within the same Discord server.
+Such data will never be accessed or analaysed, but feel free to delete them at any time by writing *!delete user* in the channel you want deleted.
+You can also use *!delete channel* and *!delete server* to delete all players' settings in a specific channel or server, but please make sure other players are okay with you performing these actions!
+''')
+
+    elif message.content.startswith('!splat'):
+        out = set_splat(message)
+        await client.send_message(message.author, out)
+
+    elif message.content.startswith('!flavour'):
+        out = set_flavour(message)
+        await client.send_message(message.author, out)
+
+    elif message.content.startswith("!delete"):
+            out = delete_content(message)
+            await client.send_message(message.author, out)
+            
         
 
 @client.event
@@ -183,6 +256,6 @@ async def on_ready():
     print(client.user.name)
     print(client.user.id)
     print('------')
+    await client.change_presence(game=discord.Game(name='!help for commands'))
 
-###EDIT THIS####
-client.run('BOTTOKEN')
+client.run(BOT_TOKEN)
