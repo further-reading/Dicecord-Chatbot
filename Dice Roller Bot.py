@@ -162,6 +162,10 @@ async def on_message(message):
     # we do not want the bot to reply to itself
     if message.author == client.user:
         return
+    
+    # we do not want the bot to reply to other bots
+    if message.author.bot:
+            return
 
     char = check_server(message)
     if message.server == None:
