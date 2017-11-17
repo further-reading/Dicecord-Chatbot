@@ -1,6 +1,8 @@
 # Chronicles of Darkness Diceroller Bot for Discord
 Python based diceroller bot for discord.
 
+[![Discord Bots](https://discordbots.org/api/widget/319289665347911680.png)](https://discordbots.org/bot/319289665347911680?utm_source=widget)
+
 ## Use
 
 To activate the bot go to https://discordapp.com/oauth2/authorize?client_id=319289665347911680&scope=bot&permissions=0
