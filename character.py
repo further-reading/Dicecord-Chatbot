@@ -2,6 +2,16 @@
 
 import random
 
+goodDefault = ["You should take the beat, [userID].",
+                                 "Aren't I a good bot, [userID]?",
+                                 "Did you hack me, [userID]?",
+                                 "Masterfully done, [userID]!",
+                                 "Don't let this luck go to waste, [userID]."]
+badDefault = ["Don't blame your bad luck on me, [userID]! I'm just a random number generator.",
+                                "That was just a practice roll, right [userID]?",
+                                "[userID] rolls like a diary farmer.",
+                                "Ask for a dramatic failure [userID], you know you want to!",
+                                "[userID], I hope that wasn't an important roll ..."]
 
 class Character:
     def __init__(self, ID, splat='default', flavour=True):
@@ -9,46 +19,32 @@ class Character:
 
         self.ID = ID
         self.rolls = []
+        self.splat= splat
+        self.goodMessages =  goodDefault.copy()
+        self.badMessages = badDefault.copy()
         self.changeSplat(splat)
         self.flavour = flavour
 
     def changeSplat(self, splat):
         if splat == 'mage':
             self.splat = 'mage'
-            self.goodMessages = ["Masterfully done, [userID]!",
-                                 "Don't let this luck go to waste, [userID].",
-                                 "The Lie cannot withstand your will, [userID]!",
+            self.goodMessages =  goodDefault.copy() + ["The Lie cannot withstand your will, [userID]!",
                                  "Reality is yours to command, [userID]!",
-                                 "You should take the beat, [userID].",
-                                 "Aren't I a good bot, [userID]?",
                                  "[userID] is a conduit to the supernal!",
-                                 "Did you hack me, [userID]?",
                                  "[userID], if you were still a sleeper the majesty of this action would have awoken you!"]
 
-            self.badMessages = ["[userID]'s nimbus looks like a wet dishrag.",
+            self.badMessages = badDefault.copy() + ["[userID]'s nimbus looks like a wet dishrag.",
                                 "The lie constricts your potential, [userID].",
-                                "Don't blame your bad luck on me, [userID]! I'm just a random number generator.",
-                                "That was just a practice roll, right [userID]?",
-                                "[userID] rolls like a diary farmer.",
-                                "Ask for a dramatic failure [userID], you know you want to!",
-                                "[userID], I hope that wasn't an important roll ...",
                                 "[userID]'s watchtower called out to the wrong soul."]
 
             return "Splat set to Mage in "
 
         elif splat == 'default':
             self.splat = 'default'
-            self.goodMessages = ["You should take the beat, [userID].",
-                                 "Aren't I a good bot, [userID]?",
-                                 "Did you hack me, [userID]?",
-                                 "Masterfully done, [userID]!",
-                                 "Don't let this luck go to waste, [userID]."]
-            self.badMessages = ["Don't blame your bad luck on me, [userID]! I'm just a random number generator.",
-                                "That was just a practice roll, right [userID]?",
-                                "[userID] rolls like a diary farmer.",
-                                "Ask for a dramatic failure [userID], you know you want to!",
-                                "[userID], I hope that wasn't an important roll ..."]
-        else:
+            self.goodMessages = goodDefault.copy()
+            self.badMessages = badDefault.copy()
+            
+        elif splat:
             return "No custom settings for " + splat + ". Messaging unchanged in "
 
     def roll_set(self, dice, rote=False, again=10, quiet=True):
