@@ -20,6 +20,7 @@ class DicecordBot:
         self.token = token
         self.servers = {}
         self.readServers()
+        self.dbltoken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjMxOTI4OTY2NTM0NzkxMTY4MCIsImJvdCI6dHJ1ZSwiaWF0IjoxNTEyODYwNDU5fQ.fHRGM8gLn7eFbDGwYaeW34WzqW1kftR3PR6XEl7rP1k'
 
     def startBot(self):
         self.loop = asyncio.new_event_loop()
@@ -33,10 +34,21 @@ class DicecordBot:
             print(self.client.user.id)
             print('------')
             await self.client.change_presence(game=discord.Game(name='PM "help" for commands'))
+            await self.sendServerCount()
 
         @self.client.event
         async def on_message(message):
             await self.on_message(message)
+
+        @self.client.event
+        async def on_server_join(server):
+            print("added to server")
+            await self.sendServerCount()
+
+        @self.client.event
+        async def on_server_remove(server):
+            print("removed from server")
+            await self.sendServerCount()
 
     async def on_message(self, message):
         # we do not want the bot to reply to itself
@@ -76,7 +88,7 @@ class DicecordBot:
 
         character = self.check_server(message)
 
-        if "one" in command:
+        if re.search("\\bone\\b",command):
             # roll a single die, no successes calculated
             result = character.roll_special()
 
@@ -128,6 +140,9 @@ class DicecordBot:
         if 'type' in command:
             return message.author, textResponses.typetext
 
+        elif 'flavourhelp' in command:
+            return message.author, textResponses.flavText
+
         elif 'help' in command:
             return message.author, textResponses.helptext
 
@@ -147,12 +162,20 @@ class DicecordBot:
 
         message = message.replace('@' + self.client.user.name, '')
         message = message.strip()
+        message = message.lower()
 
         # Find number of dice in message
         # Done this way to avoid the 8 or 9 in a 8again or 9again command
         dice = ''
-        index = 0
-        for letter in message[index + 1:]:
+        againterm = re.search("(8|9|no)again", message)
+        if againterm:
+            again = againterm.group(0)
+            location = againterm.span()
+            message = message[:location[0]] + message[location[1]:]
+        else:
+            again = None
+        
+        for letter in message:
             if letter.isdigit():
                 dice += letter
             elif letter == ' ' and dice != '':
@@ -172,15 +195,16 @@ class DicecordBot:
         # quiet is legacy code for old line by line response type
         # will eventually remove
 
-        if '8again' in message:
-            return player.roll_set(dice, again=8, rote="rote" in message)
+        if again:
+            if again =='8again':
+                return player.roll_set(dice, again=8, rote="rote" in message)
 
-        elif '9again' in message:
-            return player.roll_set(dice, again=9, rote="rote" in message)
+            elif again =='9again':
+                return player.roll_set(dice, again=9, rote="rote" in message)
 
-        elif 'noagain' in message:
-            # no again sets again to 11 so it is impossible to occur
-            return player.roll_set(dice, again=11, rote="rote" in message)
+            elif again =='noagain':
+                # no again sets again to 11 so it is impossible to occur
+                return player.roll_set(dice, again=11, rote="rote" in message)
 
         elif "rote" in message:
             return player.roll_set(dice, rote=True)
@@ -258,7 +282,6 @@ class DicecordBot:
         """Allows user to set game type for flavour text."""
 
         char = self.check_server(message)
-        new_splat = message.content[7:].lower()
         if "check" in message.content.lower():
             if char.splat:
                 return "Splat is currently set to " + char.splat.upper() + " in server " + str(
@@ -267,7 +290,18 @@ class DicecordBot:
                 return "Splat is currently not set in server " + str(message.server) + " - " + str(message.channel)
 
         else:
+            new_splat = self.find_splat(message.content.lower())
             return char.changeSplat(new_splat) + str(message.server) + " - " + str(message.channel)
+
+    def find_splat(self, message):
+        if 'mage' in message:
+            return 'mage'
+        elif 'default' in message:
+            return 'default'
+        else:
+            match = re.search('splat', message)
+            location = match.span()
+            return message[location[1]+1:]
 
     def set_flavour(self, message):
         """Allows user to set existence of flavour text."""
@@ -387,10 +421,18 @@ def runner(bot):
         bot.save_details()
         checkConnection()
         runner(bot)
-##    except ConnectionResetError:
-##        print("Connection Reset - Restarting")
-##        bot.save_details()
-##        runner(bot)
+    except ConnectionResetError:
+        print("Connection Reset - Restarting")
+        bot.loop.close()
+        bot.save_details()
+        time.sleep(300)
+        runner(bot)
+    except aiohttp.errors.ClientResponseError:
+        print("ClientResponse ErrorConnection Reset - Restarting")
+        bot.loop.close()
+        bot.save_details()
+        time.sleep(300)
+        runner(bot)
 
 
 def saver(bot):
@@ -399,7 +441,7 @@ def saver(bot):
     print('------')
     print(str(datetime.datetime.now()) + ' Details Saved')
     print('------')
-    threading.Timer(86400, saver).start()
+    threading.Timer(86400, lambda: saver(bot)).start()
 
 
 def checkConnection(host='8.8.8.8', port=53, timeout=53):
@@ -412,7 +454,7 @@ def checkConnection(host='8.8.8.8', port=53, timeout=53):
         except:
             print("No Connection")
             print(datetime.datetime.now())
-            time.sleep(5)
+            time.sleep(300)
 
 bot = DicecordBot(token)
 saver(bot)

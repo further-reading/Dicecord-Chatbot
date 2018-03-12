@@ -26,15 +26,19 @@ Rolls 8 dice. Not a rote, 10s explode!
 
 There are special commands for chance rolls or generic single dice roll.
 Write **type** to me here to get a list of all valid roll types and commands.
+
 Regardless of mode, by default the bot will send flavour text if you get 0 successes or 5+ successes.
 You can specify splat specific flavour text, for example you could set it so a Mage character gets Mage themed flavour text.
-To do so write **@Dicecord splat *splat name***. For example: **@Dicecord splat mage** for Mage.
+For more info, write **flavourhelp** to me here.
+
+Type **info** to me here to general bot information.'''
+
+flavText = '''To specify a splat write **@Dicecord splat *splat name***. For example: **@Dicecord splat mage** for Mage.
 You can turn flavour text off by writing **@Dicecord flavour off** in the channel. You can turn it back on with **@Dicecord flavour on**.
 The bot will remember these settings. To check at any time write **@Dicecord flavour check** or **@Dicecord splat check**.
 Settings are channel based, not server based. For example, you can set your splat to Mage in #Mage channel, but other channels on that server will have default settings.
 To delete these settings for your character, write **@Dicecord delete user** in the channel you want deleted.
-You can also use **@Dicecord delete channel** and *@Dicecord server* to delete all players' settings in a specific channel or server, but please make sure other players are okay with you performing these actions!
-Type **info** to me here to general bot information.'''
+You can also use **@Dicecord delete channel** and *@Dicecord server* to delete all players' settings in a specific channel or server, but please make sure other players are okay with you performing these actions!'''
 
 aboutText = '''Dicecord is a python based bot for rolling dice following the Chronicles of Darkness ruleset.
 (c) Roy Healy. Distributed under GNU General Public License v3.0.
