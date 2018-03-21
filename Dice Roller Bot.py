@@ -20,7 +20,6 @@ class DicecordBot:
         self.token = token
         self.servers = {}
         self.readServers()
-        self.dbltoken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjMxOTI4OTY2NTM0NzkxMTY4MCIsImJvdCI6dHJ1ZSwiaWF0IjoxNTEyODYwNDU5fQ.fHRGM8gLn7eFbDGwYaeW34WzqW1kftR3PR6XEl7rP1k'
 
     def startBot(self):
         self.loop = asyncio.new_event_loop()
