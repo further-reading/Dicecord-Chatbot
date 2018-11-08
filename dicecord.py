@@ -204,6 +204,9 @@ class DicecordBot:
         except ParseError:
             self.servers = {}
             return
+        except FileNotFoundError:
+            self.servers = {}
+            return
 
         servs = dom.findall('server')
 
