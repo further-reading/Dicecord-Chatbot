@@ -1,4 +1,6 @@
-dicecord.py
+runDicecord.py
+runTest.py
 __pycache__/
 details.xml
 .idea/*
+saverBot.py
