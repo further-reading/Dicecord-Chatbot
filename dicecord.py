@@ -43,10 +43,6 @@ class DicecordBot:
         if message.author == self.client.user:
             return
 
-        # we do not want the bot to reply to other bots
-        if message.author.bot:
-            return
-
         try:
             channel, content = await self.checkCommand(message)
         except TypeError:
@@ -71,6 +67,9 @@ class DicecordBot:
             self.save_details()
             await self.client.send_message(message.channel, f'servers:{len(self.client.servers)}')
             return message.author, "Saved details"
+
+        if message.author.bot:
+            return
 
         if not message.server:  # Private Message - message.server = None
             return self.pmCommands(message)
@@ -182,20 +181,20 @@ class DicecordBot:
 
         if again:
             if again =='8again':
-                return player.roll_set(dice, again=8, rote="rote" in message)
+                return player.roll_set(dice, again=8, rote="rote" in message, paradox="paradox" in message)
 
             elif again =='9again':
-                return player.roll_set(dice, again=9, rote="rote" in message)
+                return player.roll_set(dice, again=9, rote="rote" in message, paradox="paradox" in message)
 
             elif again =='noagain':
                 # no again sets again to 11 so it is impossible to occur
-                return player.roll_set(dice, again=11, rote="rote" in message)
+                return player.roll_set(dice, again=11, rote="rote" in message, paradox="paradox" in message)
 
         elif "rote" in message:
-            return player.roll_set(dice, rote=True)
+            return player.roll_set(dice, rote=True, paradox="paradox" in message)
 
         elif 'roll' in message:
-            return player.roll_set(dice)
+            return player.roll_set(dice, paradox="paradox" in message)
 
     def readServers(self):
         servers = {}
