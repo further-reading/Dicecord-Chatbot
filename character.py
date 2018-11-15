@@ -13,6 +13,12 @@ badDefault = ["Don't blame your bad luck on me, [userID]! I'm just a random numb
                                 "Ask for a dramatic failure [userID], you know you want to!",
                                 "[userID], I hope that wasn't an important roll ..."]
 
+badParadox = ["Don't blame your bad luck on me, [userID]! I'm just a random number generator.",
+              "That was just a practice roll, right [userID]?",
+              "The abyss does not react kindly to your manipulation, [userID].",
+              "Let's make things interesting [userID], go for a manifestation!",
+              "[userID], I hope that wasn't an important roll ..."]
+
 class Character:
     def __init__(self, ID, splat='default', flavour=True):
         """Class for holding players, making their rolls and saving their last rolls"""
@@ -22,6 +28,7 @@ class Character:
         self.splat= splat
         self.goodMessages =  goodDefault.copy()
         self.badMessages = badDefault.copy()
+        self.paradoxFail = badParadox.copy()
         self.changeSplat(splat)
         self.flavour = flavour
 
@@ -47,7 +54,7 @@ class Character:
         elif splat:
             return "No custom settings for " + splat + ". Messaging unchanged in "
 
-    def roll_set(self, dice, rote=False, again=10, quiet=True):
+    def roll_set(self, dice, rote=False, again=10, quiet=True, paradox=False):
         """roll a hand of dice subject to supplied conditions
         dice: int, the number of dice to roll
         rote: boolean, a rote roll rerolls all failed dice once
@@ -115,11 +122,14 @@ class Character:
             messages.append("Total Successes for " + self.ID + " : " + str(successes))
         
         # check for positive or nagative message
-        if self.flavour:
+        if self.flavour and not paradox:
             if successes == 0:
                 messages.append(self.bot_message("bad"))
             elif successes >= 5:
                 messages.append(self.bot_message("good"))
+        elif self.flavour and paradox:
+            if successes != 0:
+                messages.append(self.bot_message("paradox"))
         
         return messages
         
@@ -127,8 +137,10 @@ class Character:
         """Sends a random positive/negative message with very good or very bad rolls"""
         if messagetype == 'good':
                 out = random.choice(self.goodMessages)
-        else:
+        elif messagetype == 'bad':
                 out = random.choice(self.badMessages)
+        elif messagetype == 'paradox':
+            out = random.choice(self.paradoxFail)
 
         return out.replace("[userID]", self.ID)
             
