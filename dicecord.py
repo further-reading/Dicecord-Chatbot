@@ -66,7 +66,7 @@ class DicecordBot:
             # allows me to ask for a save of current settings at any time
             self.save_details()
             await self.client.send_message(message.channel, f'servers:{len(self.client.servers)}')
-            return message.author, "Saved details"
+            return message.channel, "Saved details"
 
         if message.author.bot:
             return
