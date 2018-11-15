@@ -1,4 +1,5 @@
-dicecord.py
+runDicecord.py
+runtest.py
 __pycache__/
 details.xml
 .idea/*
