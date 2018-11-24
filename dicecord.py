@@ -37,6 +37,7 @@ class DicecordBot:
         @self.client.event
         async def on_message(message):
             await self.on_message(message)
+            await self.client.change_presence(game=discord.Game(name='PM "help" for commands'))
 
     async def on_message(self, message):
         # we do not want the bot to reply to itself
