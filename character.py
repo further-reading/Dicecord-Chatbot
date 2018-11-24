@@ -97,11 +97,11 @@ class Character:
         
         if quiet:
             # add a summary message
-            out = f"{self.ID} rolled {str(dice)} dice and got **{str(successes)} success**"
+            out = f"{self.ID} rolled {str(dice)} dice and got **{str(successes)} success"
             if successes != 1:
-                out += "es."
+                out += "es**."
             else:
-                out += "."
+                out += "**."
             for message in self.rolls:
                 # find dice value
                 value = ''.join(x for x in message[len(self.ID) + 1:] if x.isdigit())
