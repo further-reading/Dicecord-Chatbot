@@ -97,7 +97,7 @@ class Character:
         
         if quiet:
             # add a summary message
-            out = self.ID + " rolled " + str(dice) + " dice and got " + str(successes) + " success"
+            out = f"{self.ID} rolled {str(dice)} dice and got **{str(successes)}** success"
             if successes != 1:
                 out += "es."
             else:
