@@ -37,7 +37,6 @@ class DicecordBot:
         @self.client.event
         async def on_message(message):
             await self.on_message(message)
-            await self.client.change_presence(game=discord.Game(name='PM "help" for commands'))
 
     async def on_message(self, message):
         # we do not want the bot to reply to itself
@@ -325,7 +324,7 @@ class DicecordBot:
             del self.servers[str(message.server.id)]
             return "All user details for all channels removed from **" + str(message.server) + "** by {0.author.mention}"
 
-    def save_details(self):
+    async def save_details(self):
         """Save current server settings"""
         # remove characters who have not been used in more than 30 days
         # after the character loop it removes all empty channels
@@ -387,6 +386,7 @@ class DicecordBot:
         f = open("details.xml", 'w', encoding='utf-8')
         f.write(text)
         f.close()
+        await self.client.change_presence(game=discord.Game(name='PM "help" for commands'))
 
     def errorText(self, message, error):
         print('Time: ' + str(datetime.datetime.now()) +
