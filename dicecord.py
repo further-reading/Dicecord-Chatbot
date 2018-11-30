@@ -66,6 +66,7 @@ class DicecordBot:
             # allows me to ask for a save of current settings at any time
             self.save_details()
             await self.client.send_message(message.channel, f'servers:{len(self.client.servers)}')
+            await self.client.change_presence(game=discord.Game(name='PM "help" for commands'))
             return message.channel, "Saved details"
 
         if message.author.bot:
@@ -324,7 +325,7 @@ class DicecordBot:
             del self.servers[str(message.server.id)]
             return "All user details for all channels removed from **" + str(message.server) + "** by {0.author.mention}"
 
-    async def save_details(self):
+    def save_details(self):
         """Save current server settings"""
         # remove characters who have not been used in more than 30 days
         # after the character loop it removes all empty channels
@@ -386,7 +387,6 @@ class DicecordBot:
         f = open("details.xml", 'w', encoding='utf-8')
         f.write(text)
         f.close()
-        await self.client.change_presence(game=discord.Game(name='PM "help" for commands'))
 
     def errorText(self, message, error):
         print('Time: ' + str(datetime.datetime.now()) +
