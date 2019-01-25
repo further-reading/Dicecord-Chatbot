@@ -100,10 +100,13 @@ class DicecordBot:
 
         elif 'roll' in command or 'again' in command or 'rote' in command:
             char = self.check_server(message)
-            results = self.parse_roll(char, message.clean_content)
-
-            if not results:  # will return None if error occurred
-                self.errorText(message, "Input error")
+            try:
+                results = self.parse_roll(char, message.clean_content)
+            except RuntimeError:
+                self.errorText(message, "No dice amount found")
+                return
+            except:
+                self.errorText(message, "Unknown error")
                 return
 
             for result in results:
@@ -148,54 +151,71 @@ class DicecordBot:
     def parse_roll(self, player, message):
         """Checks text for type of roll, makes that roll."""
 
-        message = message.replace('@' + self.client.user.name, '')
         message = message.strip()
         message = message.lower()
 
-        # Find number of dice in message
-        # Done this way to avoid the 8 or 9 in a 8again or 9again command
-        dice = ''
         againterm = re.search("(8|9|no)again", message)
         if againterm:
             again = againterm.group(0)
-            location = againterm.span()
-            message = message[:location[0]] + message[location[1]:]
         else:
             again = None
         
-        for letter in message:
-            if letter.isdigit():
-                dice += letter
-            elif letter == ' ' and dice != '':
-                # this would be the space after the dice number
-                # allows for users to use digits elsewhere if doing a natural language command
-                break
+        diceAmount = self.getDiceAmount(message, again)
 
-        if dice == '':
+        if diceAmount is None:
             # stop if no dice number found
             return
 
-        dice = int(dice)
-
-        if dice >= 300:
+        if diceAmount >= 300:
             return ["Too many dice. Please roll less than 300."]
 
         if again:
             if again =='8again':
-                return player.roll_set(dice, again=8, rote="rote" in message, paradox="paradox" in message)
+                return player.roll_set(diceAmount, again=8, rote="rote" in message, paradox="paradox" in message)
 
             elif again =='9again':
-                return player.roll_set(dice, again=9, rote="rote" in message, paradox="paradox" in message)
+                return player.roll_set(diceAmount, again=9, rote="rote" in message, paradox="paradox" in message)
 
             elif again =='noagain':
                 # no again sets again to 11 so it is impossible to occur
-                return player.roll_set(dice, again=11, rote="rote" in message, paradox="paradox" in message)
+                return player.roll_set(diceAmount, again=11, rote="rote" in message, paradox="paradox" in message)
 
         elif "rote" in message:
-            return player.roll_set(dice, rote=True, paradox="paradox" in message)
+            return player.roll_set(diceAmount, rote=True, paradox="paradox" in message)
 
         elif 'roll' in message:
-            return player.roll_set(dice, paradox="paradox" in message)
+            return player.roll_set(diceAmount, paradox="paradox" in message)
+
+    def getDiceAmount(self, messageText, again):
+        """
+
+        Args:
+            messageText (str): text of message
+            again (str or None): whether it is an again term
+
+        Returns (int or None): amount of dice to roll
+        """
+
+        if "roll" in messageText:
+            # First check for message of the form roll x
+            matched = re.search(r'(?<=\broll )[0-9]+\b', messageText)
+            if matched:
+                return int(matched.group())
+
+        if again:
+            # Second check for message of the form againTerm x
+            matched = re.search(f'(?<=\\b{again} )[0-9]+\\b', messageText)
+            if matched:
+                return int(matched.group())
+
+        # Check for first number after @mention and then first number in message
+        splitMessage = messageText.split('@' + self.client.user.name.lower())
+        print(self.client.user.name)
+        for index in [-1, 0]:
+            message = splitMessage[index]
+            matched = re.search(r'\b[0-9]+\b', message)
+            if matched is not None:
+                return int(matched.group())
 
     def readServers(self):
         servers = {}

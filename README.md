@@ -13,7 +13,12 @@ The bot will respond to any applicable commands made in the server that @mention
 * **"one"** - Rolls a single 10-sided die and returns the value to the channel where the command was spoken.
 * **"chance"** - Rolls a chance die, overwites the speaker's last_roll with result. Returns die result and states whether it was a botch, failure or success to the channel where the command was spoken.  
 
-The bot will respond to natural language commands as long as the keyword is present and ordering is maintained. For example, if you write "Hello @Dicecord can you roll me 4 dice please" it is the same as writing "@Dicecord roll 4".
+The bot will respond to natural language commands as long as the keyword is present. For example, if you write "Hello @Dicecord can you roll me 4 dice please" it is the same as writing "@Dicecord roll 4".
+It figures out the amount to roll based on the following logic where x is a number of dice:
+1. Looks for a phrase like "roll x"
+2. Looks for a phrase like "9again/8again/noagain x"
+3. Takes first number after the @mention
+4. Takes first number in message
 
 ## Flavour Text
 The bot will send flavour text in the case of 0 successes or 5+ successes. This falvour text can be themed to Chronicles of Darkness character types (a.k.a. splats) or disabled completely. Here are the commands to change these settings.

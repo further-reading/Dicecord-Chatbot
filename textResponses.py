@@ -13,8 +13,12 @@ Rolls 8 dice. Not a rotes, 10s explode!
 Rolls 5 dice, 9s and 10s explode!
 To roll a chance die, write **chance**
 To roll a single die, but not as part of an action, write **one**
-Note that natural langauage commands also work, as long as the keywords are present and the ordering is maintained.
-For example "Hello @Dicecord roll me 8 dice please" will also roll 8 dice
+
+Note that natural langauage commands also work. It will figure out the amount to roll based on the following logic, where x is the amount of dice to roll:
+1. Looks for a phrase like "roll x"
+2. Looks for a phrase like "9again/8again/noagain x"
+3. Takes first number after the @mention
+4. Takes first number in message
 '''
 
 helptext = '''**Commands must now include an @mention for the bot**
@@ -43,4 +47,5 @@ You can also use **@Dicecord delete channel** and *@Dicecord server* to delete a
 aboutText = '''Dicecord is a python based bot for rolling dice following the Chronicles of Darkness ruleset.
 (c) Roy Healy. Distributed under GNU General Public License v3.0.
 Built using Discord.py package and running on Python 3.6.
-See https://github.com/further-reading/discord-dirceroller-bot for source code.'''
+See https://github.com/further-reading/discord-dirceroller-bot for source code.
+Join us on Discord! https://discordapp.com/invite/DRM9MT8'''

@@ -1,77 +1,67 @@
-# Character object
-
 import random
-
-goodDefault = ["You should take the beat, [userID].",
-                                 "Aren't I a good bot, [userID]?",
-                                 "Did you hack me, [userID]?",
-                                 "Masterfully done, [userID]!",
-                                 "Don't let this luck go to waste, [userID]."]
-badDefault = ["Don't blame your bad luck on me, [userID]! I'm just a random number generator.",
-                                "That was just a practice roll, right [userID]?",
-                                "[userID] rolls like a dairy farmer.",
-                                "Ask for a dramatic failure [userID], you know you want to!",
-                                "[userID], I hope that wasn't an important roll ..."]
-
-badParadox = ["Don't blame your bad luck on me, [userID]! I'm just a random number generator.",
-              "That was just a practice roll, right [userID]?",
-              "The abyss does not react kindly to your manipulation, [userID].",
-              "Let's make things interesting [userID], go for a manifestation!",
-              "[userID], I hope that wasn't an important roll ..."]
+import messaging
 
 class Character:
+    rolls = []
+    goodMessages = messaging.goodDefault.copy()
+    badMessages = messaging.badDefault.copy()
+    paradoxFail = messaging.badParadox.copy()
+
     def __init__(self, ID, splat='default', flavour=True):
-        """Class for holding players, making their rolls and saving their last rolls"""
+        """
+        Class for holding details of a player and making their rolls.
+        Args:
+            ID (str): discord ID of player
+            splat (str): which gameline the player has set
+            flavour (bool): whether flavour messaging is active
+        """
 
         self.ID = ID
         self.rolls = []
         self.splat= splat
-        self.goodMessages =  goodDefault.copy()
-        self.badMessages = badDefault.copy()
-        self.paradoxFail = badParadox.copy()
         self.changeSplat(splat)
         self.flavour = flavour
 
     def changeSplat(self, splat):
+        """
+        Set flavour messaging for selected splat
+        Args:
+            splat (str): which gameline the player has set
+
+        Returns (str): Partial message confirming that splat was set
+
+        """
         if splat == 'mage':
             self.splat = 'mage'
-            self.goodMessages =  goodDefault.copy() + ["The Lie cannot withstand your will, [userID]!",
-                                 "Reality is yours to command, [userID]!",
-                                 "[userID] is a conduit to the supernal!",
-                                 "[userID], if you were still a sleeper the majesty of this action would have awoken you!"]
-
-            self.badMessages = badDefault.copy() + ["[userID]'s nimbus looks like a wet dishrag.",
-                                "The lie constricts your potential, [userID].",
-                                "[userID]'s watchtower called out to the wrong soul."]
+            self.goodMessages =  messaging.goodDefault.copy() + messaging.goodMage.copy()
+            self.badMessages = messaging.badDefault.copy() + messaging.badMage.copy()
 
             return "Splat set to Mage in "
 
         elif splat == 'default':
             self.splat = 'default'
-            self.goodMessages = goodDefault.copy()
-            self.badMessages = badDefault.copy()
+            self.goodMessages = messaging.goodDefault.copy()
+            self.badMessages = messaging.badDefault.copy()
             
         elif splat:
             return "No custom settings for " + splat + ". Messaging unchanged in "
 
-    def roll_set(self, dice, rote=False, again=10, quiet=True, paradox=False):
-        """roll a hand of dice subject to supplied conditions
-        dice: int, the number of dice to roll
-        rote: boolean, a rote roll rerolls all failed dice once
-        again: int, which die faces explode
-        quiet: Boolean about whether quiet mode will be used
-        Returns a list of strings stating each die result and then total successes
-        If quiet mode, returns a one element list that displays returns total successes and result of each die."""
-        
-        # Check that more than 1 die selected
+    def roll_set(self, dice, rote=False, again=10, paradox=False):
+        """
+        Roll a set of dice
+        Args:
+            dice (int): amount of dice to roll
+            rote (bool): whether this is a rote roll
+            again (int): lowest number that is rerolled
+            paradox (bool): whether this is a paradox roll
+
+        Returns (list of str): roll messages to return
+        """
+
         if dice < 1:
             return ['Select at least 1 die.']
 
-        # self.last_roll field collects the value of each rolled die
-        # initialised to blank here, will be set in each self.roll_die call
         self.rolls = []
-        
-        # successes collector variable 
         successes = 0
         
         # fail collector in case it is a rote
@@ -84,44 +74,33 @@ class Character:
                 # if not a success adds entry to fail list for rote reroll
                 fails += ["fail"]
             else:
-                # add the result to successes counter
                 successes += result
 
         if rote:
-            # if a rote all failed dice are rerolled once
             for die in fails:
                 successes += self.roll_die(again, rote_reroll=True)
 
-        # send message
         messages = []
-        
-        if quiet:
-            # add a summary message
-            out = f"{self.ID} rolled {str(dice)} dice and got **{str(successes)} success"
-            if successes != 1:
-                out += "es**."
+
+        # add a summary message
+        out = f"{self.ID} rolled {str(dice)} dice and got **{str(successes)} success"
+        if successes != 1:
+            out += "es**."
+        else:
+            out += "**."
+        for message in self.rolls:
+            # find dice value
+            value = ''.join(x for x in message[len(self.ID) + 1:] if x.isdigit())
+            if "exploded" in message:
+                out += "(" + value + ")"
+            elif "rote" in message:
+                out += " Rote:" + value
             else:
-                out += "**."
-            for message in self.rolls:
-                # find dice value
-                value = ''.join(x for x in message[len(self.ID) + 1:] if x.isdigit())
-                if "exploded" in message:
-                    out += "(" + value + ")"
-                elif "rote" in message:
-                    out += " Rote:" + value
-                else:
-                    out += " " + value
+                out += " " + value
 
-            messages.append(out)
-
-        # add total results message
-        if not quiet:
-            for roll in self.rolls:
-                messages.append(roll)
-            
-            messages.append("Total Successes for " + self.ID + " : " + str(successes))
+        messages.append(out)
         
-        # check for positive or nagative message
+        # check for positive or negative message
         if self.flavour and not paradox:
             if successes == 0:
                 messages.append(self.bot_message("bad"))
@@ -134,7 +113,13 @@ class Character:
         return messages
         
     def bot_message(self, messagetype):
-        """Sends a random positive/negative message with very good or very bad rolls"""
+        """
+        Sends a random positive/negative message with very good or very bad rolls
+        Args:
+            messagetype (str): type of messaging to add
+
+        Returns (str): message to add
+        """
         if messagetype == 'good':
                 out = random.choice(self.goodMessages)
         elif messagetype == 'bad':
@@ -145,9 +130,16 @@ class Character:
         return out.replace("[userID]", self.ID)
             
     def roll_die(self, again=10, explode_reroll=False, rote_reroll=False):
-        """Rolls a single die, calculates number of successes
-        Also updates the last_roll attribute with each roll result
-        Handles explosions and gives custom last_roll text for rote/explosions"""
+        """
+        Rolls a single die, calculates number of successes and updates self.rolls
+        Args:
+            again (int): lowest number to reroll
+            explode_reroll (bool): whether it is a reroll of an exploded dice
+            rote_reroll (bool): whether it is a reroll of a rote
+
+        Returns (int): number of successes
+
+        """
 
         value = random.randrange(1, 11)
 
@@ -170,12 +162,18 @@ class Character:
             return 0
     
     def roll_special(self):
-        """Rolls a single die, successes are not counted and last_roll not updated"""
+        """
+        Roll a single die
+        Returns (str): Result of roll
+        """
         value = random.randrange(1, 11)
         return self.ID + " rolled a " + str(value) + "!"
 
     def roll_chance(self):
-        """Rolls a chance die."""
+        """
+        Rolls a chance die
+        Returns (list of str): Messages to send
+        """
         value = random.randrange(1, 11)
         messages = [self.ID + "chance rolled " + str(value)]
 
