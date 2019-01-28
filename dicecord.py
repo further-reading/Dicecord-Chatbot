@@ -63,7 +63,7 @@ class DicecordBot:
     async def checkCommand(self, message):
         username = self.client.user.name
         command = message.content.lower()
-        if str(message.author) == self.me and "save" in command:
+        if str(message.author) == self.me and "save-CoD" in command:
             # allows me to ask for a save of current settings at any time
             self.save_details()
             await self.client.send_message(message.channel, f'servers:{len(self.client.servers)}')
