@@ -61,6 +61,7 @@ class DicecordBot:
             self.errorText(message, "HTTP Exception")
 
     async def checkCommand(self, message):
+        username = self.client.user.name
         command = message.content.lower()
         if str(message.author) == self.me and "save" in command:
             # allows me to ask for a save of current settings at any time
@@ -76,7 +77,7 @@ class DicecordBot:
             return self.pmCommands(message)
 
         # we only want bot to respond to @mentions
-        if "@Dicecord" not in message.clean_content:
+        if f"@{username}" not in message.clean_content:
             return
 
         character = self.check_server(message)
