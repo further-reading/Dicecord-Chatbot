@@ -63,7 +63,6 @@ class DicecordBot:
 
     async def checkCommand(self, message):
         command = message.content.lower()
-        print(command)
         if str(message.author) == self.me and "save-cod" in command:
             # allows me to ask for a save of current settings at any time
             self.save_details()
