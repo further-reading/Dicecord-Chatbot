@@ -32,7 +32,6 @@ class DicecordBot:
             print(self.client.user.name)
             print(self.client.user.id)
             print('------')
-            self.at_mention = f'<@!?{self.client.user.id}>'
             await self.client.change_presence(game=discord.Game(name='PM "help" for commands'))
 
         @self.client.event
@@ -40,6 +39,7 @@ class DicecordBot:
             await self.on_message(message)
 
     async def on_message(self, message):
+        self.at_mention = f'<@!?{self.client.user.id}>'
         # we do not want the bot to reply to itself
         if message.author == self.client.user:
             return
