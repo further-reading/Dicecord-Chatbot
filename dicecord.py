@@ -32,6 +32,7 @@ class DicecordBot:
             print(self.client.user.name)
             print(self.client.user.id)
             print('------')
+            self.at_mention = f'<@{self.client.user.id}>'
             await self.client.change_presence(game=discord.Game(name='PM "help" for commands'))
 
         @self.client.event
@@ -61,7 +62,6 @@ class DicecordBot:
             self.errorText(message, "HTTP Exception")
 
     async def checkCommand(self, message):
-        username = self.client.user.name
         command = message.content.lower()
         if str(message.author) == self.me and "save-cod" in command:
             # allows me to ask for a save of current settings at any time
@@ -77,7 +77,7 @@ class DicecordBot:
             return self.pmCommands(message)
 
         # we only want bot to respond to @mentions
-        if f"@{username}" not in message.clean_content:
+        if self.at_mention not in command:
             return
 
         character = self.check_server(message)
