@@ -38,6 +38,7 @@ For more info, write **flavourhelp** to me here.
 Type **info** to me here to general bot information.'''
 
 flavText = '''To specify a splat write **@Dicecord-CoD splat *splat name***. For example: **@Dicecord-CoD splat mage** for Mage.
+Currently only supports mage.
 You can turn flavour text off by writing **@Dicecord-CoD flavour off** in the channel. You can turn it back on with **@Dicecord-CoD flavour on**.
 The bot will remember these settings. To check at any time write **@Dicecord-CoD flavour check** or **@Dicecord-CoD splat check**.
 Settings are channel based, not server based. For example, you can set your splat to Mage in #Mage channel, but other channels on that server will have default settings.
