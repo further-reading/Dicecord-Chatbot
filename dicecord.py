@@ -32,7 +32,7 @@ class DicecordBot:
             print(self.client.user.name)
             print(self.client.user.id)
             print('------')
-            self.at_mention = f'<@{self.client.user.id}>'
+            self.at_mention = f'<@!?{self.client.user.id}>'
             await self.client.change_presence(game=discord.Game(name='PM "help" for commands'))
 
         @self.client.event
@@ -63,6 +63,7 @@ class DicecordBot:
 
     async def checkCommand(self, message):
         command = message.content.lower()
+        print(command)
         if str(message.author) == self.me and "save-cod" in command:
             # allows me to ask for a save of current settings at any time
             self.save_details()
@@ -77,7 +78,7 @@ class DicecordBot:
             return self.pmCommands(message)
 
         # we only want bot to respond to @mentions
-        if self.at_mention not in command:
+        if not re.search(self.at_mention, command):
             return
 
         character = self.check_server(message)
@@ -210,7 +211,7 @@ class DicecordBot:
                 return int(matched.group())
 
         # Check for first number after @mention and then first number in message
-        splitMessage = messageText.split(self.at_mention)
+        splitMessage = re.split(self.at_mention, messageText)
         for index in [-1, 0]:
             message = splitMessage[index]
             matched = re.search(r'\b[0-9]+\b', message)
