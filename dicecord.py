@@ -10,6 +10,13 @@ import textResponses
 import socket
 import traceback
 import re
+import json
+
+class DateTimeEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, datetime.datetime):
+            return o.strftime('%Y-%m-%d')
+        return json.JSONEncoder.default(self, o)
 
 class DicecordBot:
     def __init__(self, token, me):
@@ -39,7 +46,6 @@ class DicecordBot:
             await self.on_message(message)
 
     async def on_message(self, message):
-        self.at_mention = f'<@!?{self.client.user.id}>'
         # we do not want the bot to reply to itself
         if message.author == self.client.user:
             return
@@ -76,11 +82,14 @@ class DicecordBot:
         if not message.server:  # Private Message - message.server = None
             return self.pmCommands(message)
 
-        # we only want bot to respond to @mentions
-        if not re.search(self.at_mention, command):
-            return
-
         character = self.check_server(message)
+        if character.prefix == '@mention':
+            # we only want bot to respond to @mentions
+            if not re.search(f'<@!?{self.client.user.id}>', command):
+                return
+        else:
+            if not command.startswith(character.prefix):
+                return
 
         if re.search("\\bone\\b",command):
             # roll a single die, no successes calculated
@@ -130,6 +139,11 @@ class DicecordBot:
             out = self.delete_content(message)
             if out:
                 return message.author, out.format(message)
+
+        elif "prefix" in command:
+            out = self.set_prefix(message)
+            return message.channel, out.format(message)
+
 
     def pmCommands(self, message):
         command = message.content.lower()
@@ -218,6 +232,15 @@ class DicecordBot:
                 return int(matched.group())
 
     def readServers(self):
+        try:
+            with open('details.json', 'r', encoding='UTF8') as json_file:
+                self.servers = json.load(json_file)
+        except FileNotFoundError:
+            # First run of new json version
+            # Use legaxy xml code
+            self.servers = self.readServersXML()
+
+    def readServersXML(self):
         servers = {}
 
         try:
@@ -250,7 +273,7 @@ class DicecordBot:
 
                     servers[servname][channelname][username] = [Character(username, splat, bool(flavour)), lasttime]
 
-        self.servers = servers
+        return servers
 
     def check_server(self, message):
         """Helper function that finds character object associated with a user."""
@@ -285,6 +308,29 @@ class DicecordBot:
             char = Character(author)
             self.servers[server] = {channel: {author: [char, datetime.datetime.now()]}}
         return char
+
+    def get_prefix(self, message):
+        server = message.server.id
+        channel = message.channel.id
+        prefix = self.servers.get(server, {}).get(channel, {}).get('prefix', '@mention')
+        return prefix
+
+    def set_prefix(self, message):
+        # get prefix from message
+        prefix = ''
+        server = message.server.id
+        channel = message.channel.id
+
+        if server in self.servers:
+            # check if channel is known
+            if channel in self.servers[server]:
+                self.servers[server][channel]['prefix'] = prefix
+            else:
+                self.servers[server][channel] = {'prefix': prefix}
+        else:
+            self.servers[server] = {channel:{'prefix': prefix}}
+
+        return f'Command prefix has been set to {prefix} - start messages with `prefix`'
 
     def set_splat(self, message):
         """Allows user to set game type for flavour text."""
@@ -333,17 +379,15 @@ class DicecordBot:
         self.check_server(message)
         if "user" in message.content:
             del self.servers[str(message.server.id)][str(message.channel.id)][str(message.author.id)]
-            return "Details for " + str(message.author) + " removed from " + str(message.server) + " - " + str(
-                message.channel)
+            return f"Details for {str(message.author)} removed from {str(message.server)} - {str(message.channel)}"
 
         elif "channel" in message.content:
             del self.servers[str(message.server.id)][str(message.channel.id)]
-            return "All user details for channel **" + str(message.channel) + "** removed from **" + str(
-                message.server) + "** by {0.author.mention}"
+            return f"All details for channel **{str(message.channel)}** removed from **{str(message.server)}** by {{0.author.mention}}"
 
         elif "server" in message.content:
             del self.servers[str(message.server.id)]
-            return "All user details for all channels removed from **" + str(message.server) + "** by {0.author.mention}"
+            return f"All details for all channels removed from **{str(message.server)}** by {{0.author.mention}}"
 
     def save_details(self):
         """Save current server settings"""
@@ -353,7 +397,20 @@ class DicecordBot:
         for server in list(self.servers):
             for channel in list(self.servers[server]):
                 for user in list(self.servers[server][channel]):
-                    timeDifference = datetime.datetime.now() - self.servers[server][channel][user][1]
+                    last_roll = self.servers[server][channel][user][1]
+                    try:
+                        timeDifference = datetime.datetime.now() - last_roll
+                    except TypeError:
+                        # last roll time in string format
+                        # happens during first roll after start up
+                        last_roll = datetime.datetime.strptime(
+                            last_roll,
+                            '%Y-%m-%d',
+                        )
+                        timeDifference = datetime.datetime.now() - last_roll
+                    except:
+                        print(f'Unable to caclulate timespan for {last_roll} - {type(last_roll)}')
+                        continue
                     if timeDifference.days > 30:
                         del self.servers[server][channel][user]
                 if not self.servers[server][channel]:
@@ -362,51 +419,13 @@ class DicecordBot:
                 del self.servers[server]
 
         # save anyone who remains
-        root = Element('root')
-        for server in self.servers:
-            serv = Element('server')
-            root.append(serv)
-
-            servername = Element('name')
-            serv.append(servername)
-            servername.text = server
-
-            for channel in self.servers[server]:
-                chan = Element('channel')
-                serv.append(chan)
-
-                channame = Element('name')
-                chan.append(channame)
-                channame.text = channel
-
-                for user in self.servers[server][channel]:
-                    use = Element('user')
-                    chan.append(use)
-
-                    usename = Element('name')
-                    use.append(usename)
-                    usename.text = user
-
-                    splatname = Element('splat')
-                    use.append(splatname)
-                    splatname.text = self.servers[server][channel][user][0].splat
-
-                    flavname = Element('flavour')
-                    use.append(flavname)
-                    flavname.text = str(self.servers[server][channel][user][0].flavour)
-
-                    usetime = Element('time')
-                    use.append(usetime)
-                    usetime.text = str(self.servers[server][channel][user][1])
-
-        # write file
-        rough_string = etree.tostring(root, 'utf-8')
-        reparsed = minidom.parseString(rough_string)
-        text = reparsed.toprettyxml(indent="  ")
-
-        f = open("details.xml", 'w', encoding='utf-8')
-        f.write(text)
-        f.close()
+        with open('details.json', 'w', encoding='utf8') as json_file:
+            json.dump(
+                self.servers,
+                json_file,
+                ensure_ascii=False,
+                cls=DateTimeEncoder,
+            )
 
     def errorText(self, message, error):
         print('Time: ' + str(datetime.datetime.now()) +
@@ -435,7 +454,6 @@ def runner(token, me):
             bot.loop.close()
             bot.save_details()
             checkConnection()
-            bot = DicecordBot(token, me)
 
 
 def checkConnection(host='8.8.8.8', port=53, timeout=53):
