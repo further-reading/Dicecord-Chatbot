@@ -102,7 +102,7 @@ class DicecordBot:
         elif 'roll' in command or 'again' in command or 'rote' in command:
             char = self.check_server(message)
             try:
-                results = self.parse_roll(char, message.clean_content)
+                results = self.parse_roll(char, command)
             except RuntimeError:
                 self.errorText(message, "No dice amount found")
                 return
@@ -210,8 +210,7 @@ class DicecordBot:
                 return int(matched.group())
 
         # Check for first number after @mention and then first number in message
-        splitMessage = messageText.split('@' + self.client.user.name.lower())
-        print(self.client.user.name)
+        splitMessage = messageText.split(self.at_mention)
         for index in [-1, 0]:
             message = splitMessage[index]
             matched = re.search(r'\b[0-9]+\b', message)
