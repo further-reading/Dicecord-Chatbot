@@ -12,11 +12,13 @@ import traceback
 import re
 import json
 
+
 class DateTimeEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, datetime.datetime):
             return o.strftime('%Y-%m-%d')
         return json.JSONEncoder.default(self, o)
+
 
 class DicecordBot:
     def __init__(self, token, me):
@@ -143,7 +145,6 @@ class DicecordBot:
         elif "prefix" in command:
             out = self.set_prefix(message)
             return message.channel, out.format(message)
-
 
     def pmCommands(self, message):
         command = message.content.lower()
@@ -435,6 +436,7 @@ class DicecordBot:
               '\nChannel: ' + str(message.channel) +
               '\nAuthor: ' + str(message.author) +
               '\n------\n')
+
 
 def runner(token, me):
     """Helper function to run. Handles connection reset errors by automatically running again."""
