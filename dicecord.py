@@ -318,7 +318,7 @@ class DicecordBot:
 
     def set_prefix(self, message):
         # get prefix from message
-        prefix = ''
+        prefix = self.extract_prefix(message)
         server = message.server.id
         channel = message.channel.id
 
@@ -332,6 +332,15 @@ class DicecordBot:
             self.servers[server] = {channel:{'prefix': prefix}}
 
         return f'Command prefix has been set to {prefix} - start messages with `prefix`'
+
+    def extract_prefix(self, message):
+        # command of form '@Dicecord prefix {prefix}'
+        text = message.clean_content.lower()
+        command_index = text.index('prefix')
+        end_index = command_index + len('prefix')
+        prefix = text[end_index:].strip()
+        return prefix
+
 
     def set_splat(self, message):
         """Allows user to set game type for flavour text."""
