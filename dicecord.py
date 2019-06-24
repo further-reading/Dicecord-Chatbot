@@ -1,10 +1,9 @@
 import discord
 import time
 import asyncio
-from character import Character
+from roller import Roller
 import datetime
-from xml.dom import minidom
-from xml.etree.ElementTree import Element, ParseError
+from xml.etree.ElementTree import ParseError
 from xml.etree import ElementTree as etree
 import textResponses
 import socket
@@ -13,7 +12,7 @@ import re
 import json
 
 
-class DateTimeEncoder(json.JSONEncoder):
+class CustomEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, datetime.datetime):
             return o.strftime('%Y-%m-%d')
@@ -85,45 +84,47 @@ class DicecordBot:
             return self.pmCommands(message)
 
         character = self.check_server(message)
-        if character.prefix == '@mention':
+        prefix = self.get_prefix(message)
+        if prefix == '@mention':
             # we only want bot to respond to @mentions
-            if not re.search(f'<@!?{self.client.user.id}>', command):
+            pattern = f'<@!?{self.client.user.id}>'
+            if not re.search(pattern, command):
                 return
         else:
             if not command.startswith(character.prefix):
                 return
 
-        if re.search("\\bone\\b",command):
+        roller = Roller.from_dict(character)
+
+        if re.search("\\bone\\b", command):
             # roll a single die, no successes calculated
-            result = character.roll_special()
+            result = roller.roll_special()
 
             # {0.author.mention} works better for bot implementation
-            out = result.replace(character.ID, "{0.author.mention}")
+            out = result.replace('[userID]', "{0.author.mention}")
             return message.channel, out.format(message)
 
         elif "chance" in command:
-            results = character.roll_chance()
+            results = roller.roll_chance()
 
             for result in results:
                 # {0.author.mention} works better for bot implementation
-                out = result.replace(character.ID, "{0.author.mention}")
+                out = result.replace('[userID]', "{0.author.mention}")
                 await self.send(message.channel, out.format(message), message)
                 time.sleep(1)
 
         elif 'roll' in command or 'again' in command or 'rote' in command:
-            char = self.check_server(message)
             try:
-                results = self.parse_roll(char, command)
+                results = self.parse_roll(roller, command)
             except RuntimeError:
                 self.errorText(message, "No dice amount found")
                 return
-            except:
-                self.errorText(message, "Unknown error")
-                return
+            # except:
+            #     self.errorText(message, "Unknown error")
+            #     return
 
             for result in results:
-                # {0.author.mention} works better for bot implementation
-                out = result.replace(char.ID, "{0.author.mention}")
+                out = result.replace('[userID]', "{0.author.mention}")
                 await self.send(message.channel, out.format(message), message)
                 time.sleep(1)
 
@@ -164,7 +165,7 @@ class DicecordBot:
         else:
             return message.author, "Write 'help' for help, 'info' for bot info or 'type' for list of roll types"
 
-    def parse_roll(self, player, message):
+    def parse_roll(self, roller, message):
         """Checks text for type of roll, makes that roll."""
 
         message = message.strip()
@@ -187,20 +188,20 @@ class DicecordBot:
 
         if again:
             if again =='8again':
-                return player.roll_set(diceAmount, again=8, rote="rote" in message, paradox="paradox" in message)
+                return roller.roll_set(diceAmount, again=8, rote="rote" in message, paradox="paradox" in message)
 
             elif again =='9again':
-                return player.roll_set(diceAmount, again=9, rote="rote" in message, paradox="paradox" in message)
+                return roller.roll_set(diceAmount, again=9, rote="rote" in message, paradox="paradox" in message)
 
             elif again =='noagain':
                 # no again sets again to 11 so it is impossible to occur
-                return player.roll_set(diceAmount, again=11, rote="rote" in message, paradox="paradox" in message)
+                return roller.roll_set(diceAmount, again=11, rote="rote" in message, paradox="paradox" in message)
 
         elif "rote" in message:
-            return player.roll_set(diceAmount, rote=True, paradox="paradox" in message)
+            return roller.roll_set(diceAmount, rote=True, paradox="paradox" in message)
 
         elif 'roll' in message:
-            return player.roll_set(diceAmount, paradox="paradox" in message)
+            return roller.roll_set(diceAmount, paradox="paradox" in message)
 
     def getDiceAmount(self, messageText, again):
         """
@@ -238,8 +239,9 @@ class DicecordBot:
                 self.servers = json.load(json_file)
         except FileNotFoundError:
             # First run of new json version
-            # Use legaxy xml code
+            # Use legacy xml code
             self.servers = self.readServersXML()
+            return
 
     def readServersXML(self):
         servers = {}
@@ -272,7 +274,13 @@ class DicecordBot:
                     splat = user.find('splat').text
                     flavour = user.find('flavour').text
 
-                    servers[servname][channelname][username] = [Character(username, splat, bool(flavour)), lasttime]
+                    char = {
+                        'splat': splat,
+                        'flavour': flavour,
+                        'last_roll': lasttime,
+                    }
+
+                    servers[servname][channelname][username] = char
 
         return servers
 
@@ -284,10 +292,17 @@ class DicecordBot:
         author = message.author.id
 
         if str(message.server) == "Under the Black Flag":  # being lazy and setting my game to mage
-            char = Character(author)
-            char.changeSplat('mage')
-            self.servers[server] = {channel: {author: [char, datetime.datetime.now()]}}
-            return char
+            self.servers[server] = {
+                channel: {
+                    author: {
+                        'splat': 'mage',
+                        'flavour': True,
+                        'last_roll': datetime.datetime.now(),
+                    },
+                }
+            }
+
+            return {'splat': 'mage', 'flavour': True}
 
         if server in self.servers:
             # check if channel is known
@@ -295,19 +310,28 @@ class DicecordBot:
                 # check if player is known
                 if author in self.servers[server][channel]:
                     # update command time and return character
-                    self.servers[server][channel][author][1] = datetime.datetime.now()
-                    return self.servers[server][channel][author][0]
+                    self.servers[server][channel][author]['last_roll'] = datetime.datetime.now()
+                    return self.servers[server][channel][author]
 
                 else:  # if player not known make new entry
-                    char = Character(author)
-                    self.servers[server][channel][author] = [char, datetime.datetime.now()]
+                    char = {'splat': None,
+                            'flavour': True,
+                            'last_roll': datetime.datetime.now(),
+                            }
+                    self.servers[server][channel][author] = char
             else:  # make a new channel entry
-                char = Character(author)
-                self.servers[server][channel] = {author: [char, datetime.datetime.now()]}
+                char = {'splat': None,
+                        'flavour': True,
+                        'last_roll': datetime.datetime.now(),
+                        }
+                self.servers[server][channel] = {author: char, 'prefix': '@mention'}
 
         else:  # make new server entry
-            char = Character(author)
-            self.servers[server] = {channel: {author: [char, datetime.datetime.now()]}}
+            char = {'splat': None,
+                    'flavour': True,
+                    'last_roll': datetime.datetime.now(),
+                    }
+            self.servers[server] = {channel: {author: char, 'prefix': '@mention'}}
         return char
 
     def get_prefix(self, message):
@@ -329,33 +353,36 @@ class DicecordBot:
             else:
                 self.servers[server][channel] = {'prefix': prefix}
         else:
-            self.servers[server] = {channel:{'prefix': prefix}}
+            self.servers[server] = {channel: {'prefix': prefix}}
 
         return f'Command prefix has been set to {prefix} - start messages with `prefix`'
 
     def extract_prefix(self, message):
-        # command of form '@Dicecord prefix {prefix}'
+        # command of form '[current_prefix] prefix {new_prefix}'
         text = message.clean_content.lower()
         command_index = text.index('prefix')
         end_index = command_index + len('prefix')
         prefix = text[end_index:].strip()
         return prefix
 
-
     def set_splat(self, message):
         """Allows user to set game type for flavour text."""
 
         char = self.check_server(message)
         if "check" in message.content.lower():
-            if char.splat:
-                return "Splat is currently set to " + char.splat.upper() + " in server " + str(
+            if char['splat']:
+                return "Splat is currently set to " + char['splat'].upper() + " in server " + str(
                     message.server) + " - " + str(message.channel)
             else:
                 return "Splat is currently not set in server " + str(message.server) + " - " + str(message.channel)
 
         else:
             new_splat = self.find_splat(message.content.lower())
-            return char.changeSplat(new_splat) + str(message.server) + " - " + str(message.channel)
+            if new_splat:
+                char['splat'] = new_splat
+                return char.changeSplat(new_splat) + str(message.server) + " - " + str(message.channel)
+            else:
+                return 'Unsupported splat selected. Only mage supported at this time.'
 
     def find_splat(self, message):
         if 'mage' in message:
@@ -363,24 +390,22 @@ class DicecordBot:
         elif 'default' in message:
             return 'default'
         else:
-            match = re.search('splat', message)
-            location = match.span()
-            return message[location[1]+1:]
+            return
 
     def set_flavour(self, message):
         """Allows user to set existence of flavour text."""
         char = self.check_server(message)
         setting = message.content.lower()
         if 'off' in setting:
-            char.flavour = False
+            char['flavour'] = False
             return "Flavour turned off in server " + str(message.server) + " - " + str(message.channel)
 
         elif 'on' in setting:
-            char.flavour = True
+            char['flavour'] = True
             return "Flavour turned on in server " + str(message.server) + " - " + str(message.channel)
 
         elif 'check' in setting:
-            if char.flavour:
+            if char['flavour']:
                 return "Flavour turned on in server " + str(message.server) + " - " + str(message.channel)
             else:
                 return "Flavour turned off in server " + str(message.server) + " - " + str(message.channel)
@@ -407,7 +432,8 @@ class DicecordBot:
         for server in list(self.servers):
             for channel in list(self.servers[server]):
                 for user in list(self.servers[server][channel]):
-                    last_roll = self.servers[server][channel][user][1]
+                    char = self.servers[server][channel][user]
+                    last_roll = char.get('last_roll', datetime.datetime.now())
                     try:
                         timeDifference = datetime.datetime.now() - last_roll
                     except TypeError:
@@ -430,11 +456,12 @@ class DicecordBot:
 
         # save anyone who remains
         with open('details.json', 'w', encoding='utf8') as json_file:
+            print(self.servers)
             json.dump(
                 self.servers,
                 json_file,
                 ensure_ascii=False,
-                cls=DateTimeEncoder,
+                cls=CustomEncoder,
             )
 
     def errorText(self, message, error):
