@@ -40,7 +40,7 @@ class DicecordBot:
             print(self.client.user.name)
             print(self.client.user.id)
             print('------')
-            await self.client.change_presence(game=discord.Game(name='PM "help" for commands'))
+            await self.client.change_presence(activity=discord.Game(name='PM "help" for commands'))
 
         @self.client.event
         async def on_message(message):
@@ -56,11 +56,11 @@ class DicecordBot:
         except TypeError:
             return
 
-        await self.send(channel, content, message)
+        await self.send(content, message)
 
-    async def send(self, channel, content, message):
+    async def send(self, content, message):
         try:
-            await self.client.send_message(channel, content)
+            await message.channel.send(content)
         except discord.Forbidden:
             self.errorText(message, "Forbidden Error")
         except UnicodeEncodeError:
@@ -73,14 +73,14 @@ class DicecordBot:
         if str(message.author) == self.me and "save-cod" in command:
             # allows me to ask for a save of current settings at any time
             self.save_details()
-            await self.client.send_message(message.channel, f'servers:{len(self.client.servers)}')
+            await message.channel.send(f'servers:{len(self.client.guilds)}')
             await self.client.change_presence(game=discord.Game(name='PM "help" for commands'))
             return message.channel, "Saved details"
 
         if message.author.bot:
             return
 
-        if not message.server:  # Private Message - message.server = None
+        if not message.guild:  # Private Message - message.guild = None
             return self.pmCommands(message)
 
         character = self.check_server(message)
@@ -110,7 +110,7 @@ class DicecordBot:
             for result in results:
                 # {0.author.mention} works better for bot implementation
                 out = result.replace('[userID]', "{0.author.mention}")
-                await self.send(message.channel, out.format(message), message)
+                await self.send(out.format(message), message)
                 time.sleep(1)
 
         elif 'roll' in command or 'again' in command or 'rote' in command:
@@ -125,7 +125,7 @@ class DicecordBot:
 
             for result in results:
                 out = result.replace('[userID]', "{0.author.mention}")
-                await self.send(message.channel, out.format(message), message)
+                await self.send(out.format(message), message)
                 time.sleep(1)
 
         elif 'splat' in command:
@@ -258,17 +258,17 @@ class DicecordBot:
         servs = dom.findall('server')
 
         for server in servs:
-            servname = server.find('name').text
-            servers[servname] = {}
+            server_id = server.find('name').text
+            servers[server_id] = {}
             channels = server.findall('channel')
 
             for channel in channels:
-                channelname = channel.find('name').text
-                servers[servname][channelname] = {}
+                channel_id = channel.find('name').text
+                servers[server_id][channel_id] = {}
                 users = channel.findall('user')
 
                 for user in users:
-                    username = user.find('name').text
+                    user_id = user.find('name').text
                     lasttime = user.find('time').text
                     lasttime = datetime.datetime.strptime(lasttime, "%Y-%m-%d %H:%M:%S.%f")
                     splat = user.find('splat').text
@@ -280,18 +280,18 @@ class DicecordBot:
                         'last_roll': lasttime,
                     }
 
-                    servers[servname][channelname][username] = char
+                    servers[int(server_id)][int(channel_id)][int(user_id)] = char
 
         return servers
 
     def check_server(self, message):
         """Helper function that finds character object associated with a user."""
 
-        server = message.server.id
+        server = message.guild.id
         channel = message.channel.id
         author = message.author.id
 
-        if str(message.server) == "Under the Black Flag":  # being lazy and setting my game to mage
+        if str(message.guild) == "Under the Black Flag":  # being lazy and setting my game to mage
             self.servers[server] = {
                 channel: {
                     author: {
@@ -335,7 +335,7 @@ class DicecordBot:
         return char
 
     def get_prefix(self, message):
-        server = message.server.id
+        server = message.guild.id
         channel = message.channel.id
         prefix = self.servers.get(server, {}).get(channel, {}).get('prefix', '@mention')
         return prefix
@@ -343,7 +343,7 @@ class DicecordBot:
     def set_prefix(self, message):
         # get prefix from message
         prefix = self.extract_prefix(message)
-        server = message.server.id
+        server = message.guild.id
         channel = message.channel.id
 
         if server in self.servers:
@@ -372,15 +372,15 @@ class DicecordBot:
         if "check" in message.content.lower():
             if char['splat']:
                 return "Splat is currently set to " + char['splat'].upper() + " in server " + str(
-                    message.server) + " - " + str(message.channel)
+                    message.guild) + " - " + str(message.channel)
             else:
-                return "Splat is currently not set in server " + str(message.server) + " - " + str(message.channel)
+                return "Splat is currently not set in server " + str(message.guild) + " - " + str(message.channel)
 
         else:
             new_splat = self.find_splat(message.content.lower())
             if new_splat:
                 char['splat'] = new_splat
-                return char.changeSplat(new_splat) + str(message.server) + " - " + str(message.channel)
+                return char.changeSplat(new_splat) + str(message.guild) + " - " + str(message.channel)
             else:
                 return 'Unsupported splat selected. Only mage supported at this time.'
 
@@ -398,31 +398,31 @@ class DicecordBot:
         setting = message.content.lower()
         if 'off' in setting:
             char['flavour'] = False
-            return "Flavour turned off in server " + str(message.server) + " - " + str(message.channel)
+            return "Flavour turned off in server " + str(message.guild) + " - " + str(message.channel)
 
         elif 'on' in setting:
             char['flavour'] = True
-            return "Flavour turned on in server " + str(message.server) + " - " + str(message.channel)
+            return "Flavour turned on in server " + str(message.guild) + " - " + str(message.channel)
 
         elif 'check' in setting:
             if char['flavour']:
-                return "Flavour turned on in server " + str(message.server) + " - " + str(message.channel)
+                return "Flavour turned on in server " + str(message.guild) + " - " + str(message.channel)
             else:
-                return "Flavour turned off in server " + str(message.server) + " - " + str(message.channel)
+                return "Flavour turned off in server " + str(message.guild) + " - " + str(message.channel)
 
     def delete_content(self, message):
         self.check_server(message)
         if "user" in message.content:
-            del self.servers[str(message.server.id)][str(message.channel.id)][str(message.author.id)]
-            return f"Details for {str(message.author)} removed from {str(message.server)} - {str(message.channel)}"
+            del self.servers[str(message.guild.id)][str(message.channel.id)][str(message.author.id)]
+            return f"Details for {str(message.author)} removed from {str(message.guild)} - {str(message.channel)}"
 
         elif "channel" in message.content:
-            del self.servers[str(message.server.id)][str(message.channel.id)]
-            return f"All details for channel **{str(message.channel)}** removed from **{str(message.server)}** by {{0.author.mention}}"
+            del self.servers[str(message.guild.id)][str(message.channel.id)]
+            return f"All details for channel **{str(message.channel)}** removed from **{str(message.guild)}** by {{0.author.mention}}"
 
         elif "server" in message.content:
-            del self.servers[str(message.server.id)]
-            return f"All details for all channels removed from **{str(message.server)}** by {{0.author.mention}}"
+            del self.servers[str(message.guild.id)]
+            return f"All details for all channels removed from **{str(message.guild)}** by {{0.author.mention}}"
 
     def save_details(self):
         """Save current server settings"""
@@ -433,6 +433,10 @@ class DicecordBot:
             for channel in list(self.servers[server]):
                 for user in list(self.servers[server][channel]):
                     char = self.servers[server][channel][user]
+                    if type(char) == str:
+                        # prefix setting
+                        # TODO handle
+                        continue
                     last_roll = char.get('last_roll', datetime.datetime.now())
                     try:
                         timeDifference = datetime.datetime.now() - last_roll
@@ -468,7 +472,7 @@ class DicecordBot:
         print('Time: ' + str(datetime.datetime.now()) +
               '\nError: ' + error +
               '\nMessage: ' + str(message.clean_content) +
-              '\nServer: ' + str(message.server) +
+              '\nServer: ' + str(message.guild) +
               '\nChannel: ' + str(message.channel) +
               '\nAuthor: ' + str(message.author) +
               '\n------\n')
