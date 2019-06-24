@@ -183,8 +183,8 @@ class DicecordBot:
             # stop if no dice number found
             return
 
-        if diceAmount >= 300:
-            return ["Too many dice. Please roll less than 300."]
+        if diceAmount >= 50:
+            return ["Too many dice. Please roll less than 50."]
 
         if again:
             if again =='8again':
