@@ -1,5 +1,6 @@
 import random
 import messaging
+import re
 
 class Roller:
     rolls = []
@@ -96,7 +97,7 @@ class Roller:
             out += "**."
         for message in self.rolls:
             # find dice value
-            value = ' '.join(x for x in message if x.isdigit())
+            value = re.search(r'\d{1,2}', message).group(0)
             if "exploded" in message:
                 out += "(" + value + ")"
             elif "rote" in message:
@@ -126,6 +127,7 @@ class Roller:
 
         Returns (str): message to add
         """
+        out = ''
         if messagetype == 'good':
                 out = random.choice(self.goodMessages)
         elif messagetype == 'bad':
