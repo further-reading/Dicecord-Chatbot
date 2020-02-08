@@ -40,7 +40,8 @@ class DicecordBot:
             print(self.client.user.name)
             print(self.client.user.id)
             print('------')
-            await self.client.change_presence(activity=discord.Game(name='PM "help" for commands'))
+            message = 'PM "help" for commands'
+            await self.client.change_presence(game=discord.Game(name='PM "help" for commands'))
 
         @self.client.event
         async def on_message(message):
