@@ -73,7 +73,7 @@ class DicecordBot:
         if str(message.author) == self.me and "save-cod" in command:
             # allows me to ask for a save of current settings at any time
             self.save_details()
-            await self.client.send_message(message.channel, f'servers:{len(self.client.guilds)}')
+            await self.client.send_message(message.channel, f'servers:{len(self.client.servers)}')
             await self.client.change_presence(game=discord.Game(name='PM "help" for commands'))
             return message.channel, "Saved details"
 
@@ -95,7 +95,6 @@ class DicecordBot:
                 return
 
         roller = Roller.from_dict(character)
-        print('here', command)
         if 'roll' in command:
             if "chance" in command:
                 results = roller.roll_chance()
