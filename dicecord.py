@@ -137,8 +137,10 @@ class DicecordBot:
                 return message.author, out.format(message)
 
         elif "prefix" in command:
-            out = self.set_prefix(message)
-            return message.channel, out.format(message)
+            # disabled for now
+            return
+            # out = self.set_prefix(message)
+            # return message.channel, out.format(message)
 
     def pmCommands(self, message):
         command = message.content.lower()
