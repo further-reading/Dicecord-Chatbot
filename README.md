@@ -37,5 +37,5 @@ Splat and flavour settings are specific to each channel on your server. For exam
 In addition, users can opt to delete their stored settings at any time. To do so write **!delete user** in the channel you want to delete information from. There are also commands to delete all players' settings from a channel or server, **!delete channel** or **!delete server**. Please make sure other players are okay with you deleting their settings before using it. If a character does not roll over the course of 30 days their settings will be automatically purged.
 
 ## Code Requirements
-* Python 3.4.2+
+* Python 3.6+
 * `Discord.py` API wrapper and its requirements. Github: [Rapptz](https://github.com/Rapptz/discord.py)

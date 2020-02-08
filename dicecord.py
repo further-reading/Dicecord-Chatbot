@@ -270,7 +270,10 @@ class DicecordBot:
                 for user in users:
                     user_id = user.find('name').text
                     lasttime = user.find('time').text
-                    lasttime = datetime.datetime.strptime(lasttime, "%Y-%m-%d %H:%M:%S.%f")
+                    try:
+                        lasttime = datetime.datetime.strptime(lasttime, "%Y-%m-%d %H:%M:%S.%f")
+                    except ValueError:
+                        lasttime = datetime.datetime.strptime(lasttime, "%Y-%m-%d %H:%M:%S")
                     splat = user.find('splat').text
                     flavour = user.find('flavour').text
 
