@@ -12,7 +12,6 @@ Rolls 8 dice. Not a rotes, 10s explode!
 @Dicecord-CoD 9again 5
 Rolls 5 dice, 9s and 10s explode!
 To roll a chance die, write **chance**
-To roll a single die, but not as part of an action, write **one**
 
 Note that natural langauage commands also work. It will figure out the amount to roll based on the following logic, where x is the amount of dice to roll:
 1. Looks for a phrase like "roll x"
