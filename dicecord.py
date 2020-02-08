@@ -27,7 +27,7 @@ class DicecordBot:
         try:
             self.readServers()
         except FileNotFoundError:
-            self.servers = {}
+            pass
 
     def startBot(self):
         self.loop = asyncio.new_event_loop()
@@ -40,7 +40,6 @@ class DicecordBot:
             print(self.client.user.name)
             print(self.client.user.id)
             print('------')
-            message = 'PM "help" for commands'
             await self.client.change_presence(game=discord.Game(name='PM "help" for commands'))
 
         @self.client.event
@@ -61,7 +60,7 @@ class DicecordBot:
 
     async def send(self, content, message):
         try:
-            await message.channel.send(content)
+            await self.client.send_message(message.channel, content)
         except discord.Forbidden:
             self.errorText(message, "Forbidden Error")
         except UnicodeEncodeError:
@@ -74,14 +73,14 @@ class DicecordBot:
         if str(message.author) == self.me and "save-cod" in command:
             # allows me to ask for a save of current settings at any time
             self.save_details()
-            await message.channel.send(f'servers:{len(self.client.guilds)}')
+            await self.client.send_message(message.channel, f'servers:{len(self.client.guilds)}')
             await self.client.change_presence(game=discord.Game(name='PM "help" for commands'))
             return message.channel, "Saved details"
 
         if message.author.bot:
             return
 
-        if not message.guild:  # Private Message - message.guild = None
+        if not message.server:  # Private Message - message.server = None
             return self.pmCommands(message)
 
         character = self.check_server(message)
@@ -96,38 +95,31 @@ class DicecordBot:
                 return
 
         roller = Roller.from_dict(character)
+        print('here', command)
+        if 'roll' in command:
+            if "chance" in command:
+                results = roller.roll_chance()
 
-        if re.search("\\bone\\b", command):
-            # roll a single die, no successes calculated
-            result = roller.roll_special()
+                for result in results:
+                    # {0.author.mention} works better for bot implementation
+                    out = result.replace('[userID]', "{0.author.mention}")
+                    await self.send(out.format(message), message)
+                    time.sleep(1)
 
-            # {0.author.mention} works better for bot implementation
-            out = result.replace('[userID]', "{0.author.mention}")
-            return message.channel, out.format(message)
+            else:
+                try:
+                    results = self.parse_roll(roller, command)
+                except RuntimeError:
+                    self.errorText(message, "No dice amount found")
+                    return
+                # except:
+                #     self.errorText(message, "Unknown error")
+                #     return
 
-        elif "chance" in command:
-            results = roller.roll_chance()
-
-            for result in results:
-                # {0.author.mention} works better for bot implementation
-                out = result.replace('[userID]', "{0.author.mention}")
-                await self.send(out.format(message), message)
-                time.sleep(1)
-
-        elif 'roll' in command or 'again' in command or 'rote' in command:
-            try:
-                results = self.parse_roll(roller, command)
-            except RuntimeError:
-                self.errorText(message, "No dice amount found")
-                return
-            # except:
-            #     self.errorText(message, "Unknown error")
-            #     return
-
-            for result in results:
-                out = result.replace('[userID]', "{0.author.mention}")
-                await self.send(out.format(message), message)
-                time.sleep(1)
+                for result in results:
+                    out = result.replace('[userID]', "{0.author.mention}")
+                    await self.send(out.format(message), message)
+                    time.sleep(1)
 
         elif 'splat' in command:
             out = self.set_splat(message)
@@ -177,7 +169,7 @@ class DicecordBot:
             again = againterm.group(0)
         else:
             again = None
-        
+
         diceAmount = self.getDiceAmount(message, again)
 
         if diceAmount is None:
@@ -241,7 +233,7 @@ class DicecordBot:
         except FileNotFoundError:
             # First run of new json version
             # Use legacy xml code
-            self.servers = self.readServersXML()
+            self.readServersXML()
             return
 
     def readServersXML(self):
@@ -286,16 +278,14 @@ class DicecordBot:
 
                     servers[int(server_id)][int(channel_id)][int(user_id)] = char
 
-        return servers
+        self.servers = servers
 
     def check_server(self, message):
         """Helper function that finds character object associated with a user."""
-
-        server = message.guild.id
+        server = message.server.id
         channel = message.channel.id
         author = message.author.id
-
-        if str(message.guild) == "Under the Black Flag":  # being lazy and setting my game to mage
+        if str(message.server) == "Under the Black Flag":  # being lazy and setting my game to mage
             self.servers[server] = {
                 channel: {
                     author: {
@@ -339,7 +329,7 @@ class DicecordBot:
         return char
 
     def get_prefix(self, message):
-        server = message.guild.id
+        server = message.server.id
         channel = message.channel.id
         prefix = self.servers.get(server, {}).get(channel, {}).get('prefix', '@mention')
         return prefix
@@ -347,7 +337,7 @@ class DicecordBot:
     def set_prefix(self, message):
         # get prefix from message
         prefix = self.extract_prefix(message)
-        server = message.guild.id
+        server = message.server.id
         channel = message.channel.id
 
         if server in self.servers:
@@ -376,15 +366,15 @@ class DicecordBot:
         if "check" in message.content.lower():
             if char['splat']:
                 return "Splat is currently set to " + char['splat'].upper() + " in server " + str(
-                    message.guild) + " - " + str(message.channel)
+                    message.server) + " - " + str(message.channel)
             else:
-                return "Splat is currently not set in server " + str(message.guild) + " - " + str(message.channel)
+                return "Splat is currently not set in server " + str(message.server) + " - " + str(message.channel)
 
         else:
             new_splat = self.find_splat(message.content.lower())
             if new_splat:
                 char['splat'] = new_splat
-                return char.changeSplat(new_splat) + str(message.guild) + " - " + str(message.channel)
+                return char.changeSplat(new_splat) + str(message.server) + " - " + str(message.channel)
             else:
                 return 'Unsupported splat selected. Only mage supported at this time.'
 
@@ -402,31 +392,31 @@ class DicecordBot:
         setting = message.content.lower()
         if 'off' in setting:
             char['flavour'] = False
-            return "Flavour turned off in server " + str(message.guild) + " - " + str(message.channel)
+            return "Flavour turned off in server " + str(message.server) + " - " + str(message.channel)
 
         elif 'on' in setting:
             char['flavour'] = True
-            return "Flavour turned on in server " + str(message.guild) + " - " + str(message.channel)
+            return "Flavour turned on in server " + str(message.server) + " - " + str(message.channel)
 
         elif 'check' in setting:
             if char['flavour']:
-                return "Flavour turned on in server " + str(message.guild) + " - " + str(message.channel)
+                return "Flavour turned on in server " + str(message.server) + " - " + str(message.channel)
             else:
-                return "Flavour turned off in server " + str(message.guild) + " - " + str(message.channel)
+                return "Flavour turned off in server " + str(message.server) + " - " + str(message.channel)
 
     def delete_content(self, message):
         self.check_server(message)
         if "user" in message.content:
-            del self.servers[str(message.guild.id)][str(message.channel.id)][str(message.author.id)]
-            return f"Details for {str(message.author)} removed from {str(message.guild)} - {str(message.channel)}"
+            del self.servers[str(message.server.id)][str(message.channel.id)][str(message.author.id)]
+            return f"Details for {str(message.author)} removed from {str(message.server)} - {str(message.channel)}"
 
         elif "channel" in message.content:
-            del self.servers[str(message.guild.id)][str(message.channel.id)]
-            return f"All details for channel **{str(message.channel)}** removed from **{str(message.guild)}** by {{0.author.mention}}"
+            del self.servers[str(message.server.id)][str(message.channel.id)]
+            return f"All details for channel **{str(message.channel)}** removed from **{str(message.server)}** by {{0.author.mention}}"
 
         elif "server" in message.content:
-            del self.servers[str(message.guild.id)]
-            return f"All details for all channels removed from **{str(message.guild)}** by {{0.author.mention}}"
+            del self.servers[str(message.server.id)]
+            return f"All details for all channels removed from **{str(message.server)}** by {{0.author.mention}}"
 
     def save_details(self):
         """Save current server settings"""
@@ -473,17 +463,18 @@ class DicecordBot:
             )
 
     def errorText(self, message, error):
-        print('Time: ' + str(datetime.datetime.now()) +
-              '\nError: ' + error +
-              '\nMessage: ' + str(message.clean_content) +
-              '\nServer: ' + str(message.guild) +
-              '\nChannel: ' + str(message.channel) +
-              '\nAuthor: ' + str(message.author) +
-              '\n------\n')
+        print(f'''Time: {str(datetime.datetime.now())}
+              '\nError: {error}
+              '\nMessage: {str(message.clean_content)}
+              '\nServer: {str(message.server)}
+              '\nChannel: {str(message.channel)}
+              '\nAuthor: {str(message.author)}
+              '\n------\n''')
 
 
 def runner(token, me):
     """Helper function to run. Handles connection reset errors by automatically running again."""
+    bot = None
     while True:
         try:
             bot = DicecordBot(token, me)
@@ -491,14 +482,16 @@ def runner(token, me):
             bot.startBot()
             bot.client.run(bot.token)
         except KeyboardInterrupt:
-            bot.save_details()
-            bot.loop.close()
+            if bot:
+                bot.save_details()
+                bot.loop.close()
             break
         except Exception as e:
             print(datetime.datetime.now(), e)
             traceback.format_exc()
-            bot.loop.close()
-            bot.save_details()
+            if bot:
+                bot.loop.close()
+                bot.save_details()
             checkConnection()
 
 
