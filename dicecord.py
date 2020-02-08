@@ -210,9 +210,9 @@ class DicecordBot:
 
         if "roll" in messageText:
             # First check for message of the form roll x
-            matched = re.search(r'(?<=\broll )[0-9]+\b', messageText)
+            matched = re.search(r'\broll ([0-9]+\b)', messageText)
             if matched:
-                return int(matched.group())
+                return int(matched.group(1))
 
         if again:
             # Second check for message of the form againTerm x
@@ -221,10 +221,10 @@ class DicecordBot:
                 return int(matched.group())
 
         # Check for first number after @mention and then first number in message
-        splitMessage = re.split(self.at_mention, messageText)
+        splitMessage = re.split(f'<@!{self.client.user.id}>', messageText)
         for index in [-1, 0]:
             message = splitMessage[index]
-            matched = re.search(r'\b[0-9]+\b', message)
+            matched = re.search(r'\b\d+\b', message)
             if matched is not None:
                 return int(matched.group())
 
