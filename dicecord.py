@@ -428,8 +428,8 @@ class DicecordBot:
                 for user in list(self.servers[server][channel]):
                     char = self.servers[server][channel][user]
                     if type(char) == str:
-                        # prefix setting
-                        # TODO handle
+                        # save prefix setting - this is another value in dictionary
+                        # TODO handle saving of prefix setting
                         continue
                     last_roll = char.get('last_roll', datetime.datetime.now())
                     try:
@@ -448,6 +448,9 @@ class DicecordBot:
                     if timeDifference.days > 30:
                         del self.servers[server][channel][user]
                 if not self.servers[server][channel]:
+                    del self.servers[server][channel]
+                elif len(self.servers[server][channel]) == 1 and 'prefix' in self.servers[server][channel]:
+                    # only entry left is the prefix setting - channel is no longer active
                     del self.servers[server][channel]
             if not self.servers[server]:
                 del self.servers[server]
@@ -496,6 +499,7 @@ def runner(token, me):
 
 
 def checkConnection(host='8.8.8.8', port=53, timeout=53):
+    # Try to connect to google
     while True:
         try:
             socket.setdefaulttimeout(timeout)
