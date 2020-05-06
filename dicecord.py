@@ -61,7 +61,7 @@ class DicecordBot:
 
     async def send(self, content, message):
         try:
-            await self.client.send_message(message.channel, content)
+            await message.channel.send(content)
         except discord.Forbidden:
             self.errorText(message, "Forbidden Error")
         except UnicodeEncodeError:
@@ -74,7 +74,7 @@ class DicecordBot:
         if str(message.author) == self.me and "save-cod" in command:
             # allows me to ask for a save of current settings at any time
             self.save_details()
-            await self.client.send_message(message.channel, f'servers:{len(self.client.guilds)}')
+            await self.send(f'servers:{len(self.client.guilds)}', message)
             await self.client.change_presence(game=discord.Game(name='PM "help" for commands'))
             return message.channel, "Saved details"
 
