@@ -1,6 +1,4 @@
 import dicecord
-
-me = 'MY USERNAME'
-token = 'MY TOKEN'
+from tokens import me, token
 
 dicecord.runner(token, me)
