@@ -478,18 +478,12 @@ class DicecordBot:
 def runner(token, me):
     """Helper function to run. Handles connection reset errors by automatically running again."""
     bot = None
-    print('Here')
-    bad_connection = True
-    while bad_connection:
+    while True:
         try:
             bot = DicecordBot(token, me)
             bot.readServers()
             bot.startBot()
-            bad_connection = False
             bot.client.run(bot.token)
-        except (KeyboardInterrupt, RuntimeError) as e:
-            print(datetime.datetime.now(), e)
-            traceback.format_exc()
         except Exception as e:
             print(datetime.datetime.now(), e)
             traceback.format_exc()
@@ -497,7 +491,6 @@ def runner(token, me):
                 bot.loop.close()
                 bot.save_details()
             checkConnection()
-            bad_connection = True
         print('Loop Exited')
         if bot:
             bot.save_details()
