@@ -221,9 +221,8 @@ class DicecordBot:
                 return int(matched.group())
 
         # Check for first number after @mention and then first number in message
-        splitMessage = re.split(f'<@!{self.client.user.id}>', messageText)
-        for index in [-1, 0]:
-            message = splitMessage[index]
+        splitMessage = re.split(f'<@{self.client.user.id}>', messageText)
+        for message in splitMessage[::-1]:
             matched = re.search(r'\b\d+\b', message)
             if matched is not None:
                 return int(matched.group())
