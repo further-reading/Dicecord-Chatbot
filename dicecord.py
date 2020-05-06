@@ -74,14 +74,14 @@ class DicecordBot:
         if str(message.author) == self.me and "save-cod" in command:
             # allows me to ask for a save of current settings at any time
             self.save_details()
-            await self.client.send_message(message.channel, f'servers:{len(self.client.servers)}')
+            await self.client.send_message(message.channel, f'servers:{len(self.client.guilds)}')
             await self.client.change_presence(game=discord.Game(name='PM "help" for commands'))
             return message.channel, "Saved details"
 
         if message.author.bot:
             return
 
-        if not message.server:  # Private Message - message.server = None
+        if not message.guild:  # Private Message - message.guild = None
             return self.pmCommands(message)
 
         character = self.check_server(message)
@@ -284,10 +284,10 @@ class DicecordBot:
 
     def check_server(self, message):
         """Helper function that finds character object associated with a user."""
-        server = message.server.id
+        server = message.guild.id
         channel = message.channel.id
         author = message.author.id
-        if str(message.server) == "Under the Black Flag":  # being lazy and setting my game to mage
+        if str(message.guild) == "Under the Black Flag":  # being lazy and setting my game to mage
             self.servers[server] = {
                 channel: {
                     author: {
@@ -331,7 +331,7 @@ class DicecordBot:
         return char
 
     def get_prefix(self, message):
-        server = message.server.id
+        server = message.guild.id
         channel = message.channel.id
         prefix = self.servers.get(server, {}).get(channel, {}).get('prefix', '@mention')
         return prefix
@@ -339,7 +339,7 @@ class DicecordBot:
     def set_prefix(self, message):
         # get prefix from message
         prefix = self.extract_prefix(message)
-        server = message.server.id
+        server = message.guild.id
         channel = message.channel.id
 
         if server in self.servers:
@@ -368,15 +368,15 @@ class DicecordBot:
         if "check" in message.content.lower():
             if char['splat']:
                 return "Splat is currently set to " + char['splat'].upper() + " in server " + str(
-                    message.server) + " - " + str(message.channel)
+                    message.guild) + " - " + str(message.channel)
             else:
-                return "Splat is currently not set in server " + str(message.server) + " - " + str(message.channel)
+                return "Splat is currently not set in server " + str(message.guild) + " - " + str(message.channel)
 
         else:
             new_splat = self.find_splat(message.content.lower())
             if new_splat:
                 char['splat'] = new_splat
-                return char.changeSplat(new_splat) + str(message.server) + " - " + str(message.channel)
+                return char.changeSplat(new_splat) + str(message.guild) + " - " + str(message.channel)
             else:
                 return 'Unsupported splat selected. Only mage supported at this time.'
 
@@ -394,31 +394,31 @@ class DicecordBot:
         setting = message.content.lower()
         if 'off' in setting:
             char['flavour'] = False
-            return "Flavour turned off in server " + str(message.server) + " - " + str(message.channel)
+            return "Flavour turned off in server " + str(message.guild) + " - " + str(message.channel)
 
         elif 'on' in setting:
             char['flavour'] = True
-            return "Flavour turned on in server " + str(message.server) + " - " + str(message.channel)
+            return "Flavour turned on in server " + str(message.guild) + " - " + str(message.channel)
 
         elif 'check' in setting:
             if char['flavour']:
-                return "Flavour turned on in server " + str(message.server) + " - " + str(message.channel)
+                return "Flavour turned on in server " + str(message.guild) + " - " + str(message.channel)
             else:
-                return "Flavour turned off in server " + str(message.server) + " - " + str(message.channel)
+                return "Flavour turned off in server " + str(message.guild) + " - " + str(message.channel)
 
     def delete_content(self, message):
         self.check_server(message)
         if "user" in message.content:
-            del self.servers[str(message.server.id)][str(message.channel.id)][str(message.author.id)]
-            return f"Details for {str(message.author)} removed from {str(message.server)} - {str(message.channel)}"
+            del self.servers[str(message.guild.id)][str(message.channel.id)][str(message.author.id)]
+            return f"Details for {str(message.author)} removed from {str(message.guild)} - {str(message.channel)}"
 
         elif "channel" in message.content:
-            del self.servers[str(message.server.id)][str(message.channel.id)]
-            return f"All details for channel **{str(message.channel)}** removed from **{str(message.server)}** by {{0.author.mention}}"
+            del self.servers[str(message.guild.id)][str(message.channel.id)]
+            return f"All details for channel **{str(message.channel)}** removed from **{str(message.guild)}** by {{0.author.mention}}"
 
         elif "server" in message.content:
-            del self.servers[str(message.server.id)]
-            return f"All details for all channels removed from **{str(message.server)}** by {{0.author.mention}}"
+            del self.servers[str(message.guild.id)]
+            return f"All details for all channels removed from **{str(message.guild)}** by {{0.author.mention}}"
 
     def save_details(self):
         """Save current server settings"""
@@ -471,7 +471,7 @@ class DicecordBot:
         print(f'''Time: {str(datetime.datetime.now())}
               '\nError: {error}
               '\nMessage: {str(message.clean_content)}
-              '\nServer: {str(message.server)}
+              '\nServer: {str(message.guild)}
               '\nChannel: {str(message.channel)}
               '\nAuthor: {str(message.author)}
               '\n------\n''')
