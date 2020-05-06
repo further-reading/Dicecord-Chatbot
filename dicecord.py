@@ -39,8 +39,9 @@ class DicecordBot:
             print('Logged in as')
             print(self.client.user.name)
             print(self.client.user.id)
+            print(datetime.datetime.now())
             print('------')
-            await self.client.change_presence(game=discord.Game(name='PM "help" for commands'))
+            await self.client.change_presence(activity=discord.Game(name='PM "help" for commands'))
 
         @self.client.event
         async def on_message(message):
@@ -479,7 +480,9 @@ class DicecordBot:
 def runner(token, me):
     """Helper function to run. Handles connection reset errors by automatically running again."""
     bot = None
+    print('Here')
     while True:
+        print('No, here')
         try:
             bot = DicecordBot(token, me)
             bot.readServers()
@@ -489,7 +492,7 @@ def runner(token, me):
             if bot:
                 bot.save_details()
                 bot.loop.close()
-            break
+            quit()
         except Exception as e:
             print(datetime.datetime.now(), e)
             traceback.format_exc()
