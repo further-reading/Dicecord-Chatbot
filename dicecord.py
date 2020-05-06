@@ -458,7 +458,6 @@ class DicecordBot:
 
         # save anyone who remains
         with open('details.json', 'w', encoding='utf8') as json_file:
-            print(self.servers)
             json.dump(
                 self.servers,
                 json_file,
@@ -480,18 +479,17 @@ def runner(token, me):
     """Helper function to run. Handles connection reset errors by automatically running again."""
     bot = None
     print('Here')
-    while True:
-        print('No, here')
+    bad_connection = True
+    while bad_connection:
         try:
             bot = DicecordBot(token, me)
             bot.readServers()
             bot.startBot()
+            bad_connection = False
             bot.client.run(bot.token)
-        except KeyboardInterrupt:
-            if bot:
-                bot.save_details()
-                bot.loop.close()
-            quit()
+        except (KeyboardInterrupt, RuntimeError) as e:
+            print(datetime.datetime.now(), e)
+            traceback.format_exc()
         except Exception as e:
             print(datetime.datetime.now(), e)
             traceback.format_exc()
@@ -499,6 +497,11 @@ def runner(token, me):
                 bot.loop.close()
                 bot.save_details()
             checkConnection()
+            bad_connection = True
+        print('Loop Exited')
+        if bot:
+            bot.save_details()
+            bot.loop.close()
 
 
 def checkConnection(host='8.8.8.8', port=53, timeout=53):
