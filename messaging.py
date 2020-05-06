@@ -27,5 +27,10 @@ badMage = ["[userID]'s nimbus looks like a wet dishrag.",
            "[userID]'s watchtower called out to the wrong soul."]
 
 goodVampire = []
-
 badVampire = []
+
+goodGeist = []
+badGeist = []
+
+goodChangeling = []
+badChangeling = []
