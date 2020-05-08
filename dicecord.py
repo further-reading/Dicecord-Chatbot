@@ -377,7 +377,7 @@ class DicecordBot:
             new_splat = self.find_splat(message.content.lower())
             if new_splat:
                 char['splat'] = new_splat
-                return char.changeSplat(new_splat) + str(message.guild) + " - " + str(message.channel)
+                return f'Flavour changed to {new_splat} {message.guild} - {message.channel}'
             else:
                 return 'Unsupported splat selected. Only mage supported at this time.'
 
