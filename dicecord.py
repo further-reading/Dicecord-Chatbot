@@ -53,21 +53,21 @@ class DicecordBot:
             return
 
         try:
-            channel, content = await self.checkCommand(message)
+            await self.checkCommand(message)
         except TypeError:
+            # TODO why did I do this again?
             return
 
-        await self.send(content, message)
-
-    async def send(self, content, message):
+    async def send(self, content, discord_object):
+        # discord_object is usually a author or a message
         try:
-            await message.channel.send(content)
+            await discord_object.channel.send(content)
         except discord.Forbidden:
-            self.errorText(message, "Forbidden Error")
+            self.errorText(discord_object, "Forbidden Error")
         except UnicodeEncodeError:
-            self.errorText(message, "Unicode Error")
+            self.errorText(discord_object, "Unicode Error")
         except discord.errors.HTTPException:
-            self.errorText(message, "HTTP Exception")
+            self.errorText(discord_object, "HTTP Exception")
 
     async def checkCommand(self, message):
         command = message.content.lower()
@@ -76,13 +76,15 @@ class DicecordBot:
             self.save_details()
             await self.send(f'servers:{len(self.client.guilds)}', message)
             await self.client.change_presence(game=discord.Game(name='PM "help" for commands'))
-            return message.channel, "Saved details"
+            return
 
         if message.author.bot:
             return
 
         if not message.guild:  # Private Message - message.guild = None
-            return self.pmCommands(message)
+            channel, content = self.pmCommands(message)
+            await self.send(content, channel)
+            return
 
         character = self.check_server(message)
         prefix = self.get_prefix(message)
