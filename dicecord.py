@@ -11,6 +11,8 @@ import traceback
 import re
 import json
 
+SPLATS = ['mage', 'default']
+
 
 class CustomEncoder(json.JSONEncoder):
     def default(self, o):
@@ -374,6 +376,7 @@ class DicecordBot:
                 return "Splat is currently not set in server " + str(message.guild) + " - " + str(message.channel)
 
         else:
+            # TODO check if I need to remove author name here
             new_splat = self.find_splat(message.content.lower())
             if new_splat:
                 char['splat'] = new_splat
@@ -382,12 +385,9 @@ class DicecordBot:
                 return 'Unsupported splat selected. Only mage supported at this time.'
 
     def find_splat(self, message):
-        if 'mage' in message:
-            return 'mage'
-        elif 'default' in message:
-            return 'default'
-        else:
-            return
+        for splat in SPLATS:
+            if splat in message:
+                return splat
 
     def set_flavour(self, message):
         """Allows user to set existence of flavour text."""
