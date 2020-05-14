@@ -20,6 +20,11 @@ class CustomEncoder(json.JSONEncoder):
             return o.strftime('%Y-%m-%d')
         return json.JSONEncoder.default(self, o)
 
+def jsonKeys2int(x):
+    if isinstance(x, dict):
+        return {int(k) if k.isdigit() else k: v for k, v in x.items()}
+    return x
+
 
 class DicecordBot:
     def __init__(self, token, me):
@@ -60,16 +65,20 @@ class DicecordBot:
             # TODO why did I do this again?
             return
 
-    async def send(self, content, discord_object):
-        # discord_object is usually a author or a message
+    async def send(self, content, message, dm=False):
+        if dm:
+            member = message.author
+            channel = await member.create_dm()
+        else:
+            channel = message.channel
         try:
-            await discord_object.channel.send(content)
+            await channel.send(content)
         except discord.Forbidden:
-            self.errorText(discord_object, "Forbidden Error")
+            self.errorText(message, "Forbidden Error")
         except UnicodeEncodeError:
-            self.errorText(discord_object, "Unicode Error")
+            self.errorText(message, "Unicode Error")
         except discord.errors.HTTPException:
-            self.errorText(discord_object, "HTTP Exception")
+            self.errorText(message, "HTTP Exception")
 
     async def checkCommand(self, message):
         command = message.content.lower()
@@ -84,8 +93,7 @@ class DicecordBot:
             return
 
         if not message.guild:  # Private Message - message.guild = None
-            channel, content = self.pmCommands(message)
-            await self.send(content, channel)
+            await self.pmCommands(message)
             return
 
         character = self.check_server(message)
@@ -128,41 +136,50 @@ class DicecordBot:
         elif 'splat' in command:
             out = self.set_splat(message)
             if out:
-                return message.author, out.format(message)
+                out = out.replace('[userID]', "{0.author.mention}")
+                out = out.format(message)
+                await self.send(out, message)
 
         elif 'flavour' in command:
             out = self.set_flavour(message)
             if out:
-                return message.author, out.format(message)
+                out = out.replace('[userID]', "{0.author.mention}")
+                out = out.format(message)
+                await self.send(out, message)
 
         elif "delete" in command:
             out = self.delete_content(message)
             if out:
-                return message.author, out.format(message)
+                out = out.replace('[userID]', "{0.author.mention}")
+                out = out.format(message)
+                await self.send(out, message)
 
         elif "prefix" in command:
             # disabled for now
             return
             # out = self.set_prefix(message)
-            # return message.channel, out.format(message)
+            # out = out.replace('[userID]', "{0.author.mention}")
+            # await self.send(out, message)
 
-    def pmCommands(self, message):
+    async def pmCommands(self, message):
         command = message.content.lower()
 
         if 'type' in command:
-            return message.author, textResponses.typetext
+            content = textResponses.typetext
 
         elif 'flavourhelp' in command:
-            return message.author, textResponses.flavText
+            content = textResponses.flavText
 
         elif 'help' in command:
-            return message.author, textResponses.helptext
+            content = textResponses.helptext
 
         elif 'info' in command:
-            return message.author, textResponses.aboutText
+            content = textResponses.aboutText
 
         else:
-            return message.author, "Write 'help' for help, 'info' for bot info or 'type' for list of roll types"
+            content = "Write 'help' for help, 'info' for bot info or 'type' for list of roll types"
+
+        await self.send(content, message)
 
     def parse_roll(self, roller, message):
         """Checks text for type of roll, makes that roll."""
@@ -234,7 +251,7 @@ class DicecordBot:
     def readServers(self):
         try:
             with open('details.json', 'r', encoding='UTF8') as json_file:
-                self.servers = json.load(json_file)
+                self.servers = json.load(json_file, object_hook=jsonKeys2int)
         except FileNotFoundError:
             # First run of new json version
             # Use legacy xml code
@@ -302,7 +319,6 @@ class DicecordBot:
             }
 
             return {'splat': 'mage', 'flavour': True}
-
         if server in self.servers:
             # check if channel is known
             if channel in self.servers[server]:
@@ -370,17 +386,15 @@ class DicecordBot:
         char = self.check_server(message)
         if "check" in message.content.lower():
             if char['splat']:
-                return "Splat is currently set to " + char['splat'].upper() + " in server " + str(
-                    message.guild) + " - " + str(message.channel)
+                return f"Splat for [userID] is currently set to {char['splat'].upper()} in server {message.guild} - #{message.channel}"
             else:
-                return "Splat is currently not set in server " + str(message.guild) + " - " + str(message.channel)
+                return f"Splat for [userID] is currently not set in server {str(message.guild)} - {str(message.channel)}"
 
         else:
-            # TODO check if I need to remove author name here
             new_splat = self.find_splat(message.content.lower())
             if new_splat:
                 char['splat'] = new_splat
-                return f'Flavour changed to {new_splat} {message.guild} - {message.channel}'
+                return f'Flavour for [userID] changed to {new_splat} in server {message.guild} - #{message.channel}'
             else:
                 return 'Unsupported splat selected. Only mage supported at this time.'
 
@@ -395,31 +409,31 @@ class DicecordBot:
         setting = message.content.lower()
         if 'off' in setting:
             char['flavour'] = False
-            return "Flavour turned off in server " + str(message.guild) + " - " + str(message.channel)
+            return f"Flavour turned off in server {str(message.guild)} - {str(message.channel)}"
 
         elif 'on' in setting:
             char['flavour'] = True
-            return "Flavour turned on in server " + str(message.guild) + " - " + str(message.channel)
+            return f"Flavour turned on in server {str(message.guild)} - {str(message.channel)}"
 
         elif 'check' in setting:
             if char['flavour']:
-                return "Flavour turned on in server " + str(message.guild) + " - " + str(message.channel)
+                return f"Flavour turned on in server {str(message.guild)} - {str(message.channel)}"
             else:
-                return "Flavour turned off in server " + str(message.guild) + " - " + str(message.channel)
+                return f"Flavour turned off in server {str(message.guild)} - {str(message.channel)}"
 
     def delete_content(self, message):
         self.check_server(message)
         if "user" in message.content:
             del self.servers[str(message.guild.id)][str(message.channel.id)][str(message.author.id)]
-            return f"Details for {str(message.author)} removed from {str(message.guild)} - {str(message.channel)}"
+            return f"Details for [userID] removed from {str(message.guild)} - {str(message.channel)}"
 
         elif "channel" in message.content:
             del self.servers[str(message.guild.id)][str(message.channel.id)]
-            return f"All details for channel **{str(message.channel)}** removed from **{str(message.guild)}** by {{0.author.mention}}"
+            return f"All details for channel **{str(message.channel)}** removed from **{str(message.guild)}** by [userID]"
 
         elif "server" in message.content:
             del self.servers[str(message.guild.id)]
-            return f"All details for all channels removed from **{str(message.guild)}** by {{0.author.mention}}"
+            return f"All details for all channels removed from **{str(message.guild)}** by [userID]"
 
     def save_details(self):
         """Save current server settings"""
