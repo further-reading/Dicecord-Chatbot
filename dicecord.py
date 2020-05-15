@@ -10,6 +10,7 @@ import socket
 import traceback
 import re
 import json
+from error_logger import send_error_message
 
 SPLATS = ['mage', 'default']
 
@@ -43,11 +44,11 @@ class DicecordBot:
         @self.client.event
         async def on_ready():
             """Print details and update server count when bot comes online."""
-            print('Logged in as')
-            print(self.client.user.name)
-            print(self.client.user.id)
-            print(datetime.datetime.now())
-            print('------')
+            content = 'Logged in as'
+            content += '\n' + self.client.user.name
+            content += '\n' + self.client.user.id
+            content += '\n' + str(datetime.datetime.now())
+            send_error_message(content)
             await self.client.change_presence(activity=discord.Game(name='PM "help" for commands'))
 
         @self.client.event
@@ -73,12 +74,9 @@ class DicecordBot:
             channel = message.channel
         try:
             await channel.send(content)
-        except discord.Forbidden:
-            self.errorText(message, "Forbidden Error")
-        except UnicodeEncodeError:
-            self.errorText(message, "Unicode Error")
-        except discord.errors.HTTPException:
-            self.errorText(message, "HTTP Exception")
+        except (discord.Forbidden, UnicodeEncodeError, discord.errors.HTTPException):
+            tb = traceback.format_exc()
+            self.errorText(message, tb)
 
     async def checkCommand(self, message):
         command = message.content.lower()
@@ -122,11 +120,13 @@ class DicecordBot:
                 try:
                     results = self.parse_roll(roller, command)
                 except RuntimeError:
-                    self.errorText(message, "No dice amount found")
+                    tb = traceback.format_exc()
+                    self.errorText(message, f"No dice amount found\n\n{tb}")
                     return
-                # except:
-                #     self.errorText(message, "Unknown error")
-                #     return
+                except:
+                    tb = traceback.format_exc()
+                    self.errorText(message, f"Unknown error\n\n{tb}")
+                    return
 
                 for result in results:
                     out = result.replace('[userID]', "{0.author.mention}")
@@ -482,13 +482,15 @@ class DicecordBot:
             )
 
     def errorText(self, message, error):
-        print(f'''Time: {str(datetime.datetime.now())}
-              '\nError: {error}
-              '\nMessage: {str(message.clean_content)}
-              '\nServer: {str(message.guild)}
-              '\nChannel: {str(message.channel)}
-              '\nAuthor: {str(message.author)}
-              '\n------\n''')
+        content = f'''Time: {datetime.datetime.now()}
+Message: {message.clean_content}
+Server: {message.guild}
+Channel: {message.channel}
+Author: {message.author}
+Error: 
+{error}
+              '''
+        send_error_message(content)
 
 
 def runner(token, me):
@@ -500,14 +502,13 @@ def runner(token, me):
             bot.readServers()
             bot.startBot()
             bot.client.run(bot.token)
-        except Exception as e:
-            print(datetime.datetime.now(), e)
-            traceback.format_exc()
+        except:
+            tb = traceback.format_exc()
+            send_error_message(f'Potential disconnect\n\n{tb}')
             if bot:
                 bot.loop.close()
                 bot.save_details()
             checkConnection()
-        print('Loop Exited')
         if bot:
             bot.save_details()
             bot.loop.close()
@@ -519,9 +520,8 @@ def checkConnection(host='8.8.8.8', port=53, timeout=53):
         try:
             socket.setdefaulttimeout(timeout)
             socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
-            print("Connected")
+            send_error_message("Reconnected")
             break
         except:
-            print("No Connection")
-            print(datetime.datetime.now())
+            send_error_message(f"No Connection still at {datetime.datetime.now()}")
             time.sleep(300)
