@@ -1,4 +1,4 @@
 import dicecord
-from tokens import me, token
+from tokens import saver, token
 
-dicecord.runner(token, me)
+dicecord.runner(token, saver)
