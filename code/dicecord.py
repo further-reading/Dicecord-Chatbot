@@ -1,17 +1,18 @@
 import discord
 import time
 import asyncio
-from roller import Roller
 import datetime
 from xml.etree.ElementTree import ParseError
 from xml.etree import ElementTree as etree
-import textResponses
 import socket
 import traceback
 import re
 import json
-from error_logger import send_error_message
-from tokens import saver, token
+
+from utils.error_logger import send_error_message
+from utils.tokens import saver, token
+from utils import textResponses
+from utils.roller import Roller
 
 SPLATS = ['mage', 'default']
 
