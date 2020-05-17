@@ -178,26 +178,32 @@ class Roller:
         value = random.randrange(1, 11)
         return "[userID] rolled a " + str(value) + "!"
 
-    def roll_chance(self):
+    def roll_chance(self, paradox=False):
         """
         Rolls a chance die
         Returns (list of str): Messages to send
         """
-        value = random.randrange(1, 11)
+        value = random.randint(1, 10)
         messages = ["[userID] chance rolled " + str(value)]
 
         # Check if failure, botch or success
         if value == 10:
             messages.append("[userID] got a success!")
             if self.flavour:
-                messages.append(self.bot_message("good"))
+                if paradox:
+                    messages.append(self.bot_message("paradox"))
+                else:
+                    messages.append(self.bot_message("good"))
         elif value == 1:
             messages.append("[userID] botched!")
             if self.flavour:
-                messages.append(self.bot_message("bad"))
+                if paradox:
+                    messages.append(self.bot_message("good"))
+                else:
+                    messages.append(self.bot_message("bad"))
         else:
             messages.append("[userID] failed!")
-            if self.flavour:
+            if self.flavour and not paradox:
                 messages.append(self.bot_message("bad"))
 
         return messages

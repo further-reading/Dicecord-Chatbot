@@ -66,7 +66,8 @@ class DicecordBot:
         try:
             await self.checkCommand(message)
         except TypeError:
-            # TODO why did I do this again?
+            tb = traceback.format_exc()
+            self.errorText(message, tb)
             return
 
     async def send(self, content, message, dm=False):
@@ -111,8 +112,7 @@ class DicecordBot:
         roller = Roller.from_dict(character)
         if 'roll' in command:
             if "chance" in command:
-                results = roller.roll_chance()
-
+                results = roller.roll_chance(paradox="paradox" in command)
                 for result in results:
                     # {0.author.mention} works better for bot implementation
                     out = result.replace('[userID]', "{0.author.mention}")
@@ -463,7 +463,9 @@ class DicecordBot:
                         )
                         timeDifference = datetime.datetime.now() - last_roll
                     except:
-                        print(f'Unable to caclulate timespan for {last_roll} - {type(last_roll)}')
+                        output = f'Unable to caclulate timespan for {last_roll} - {type(last_roll)}\n\n'
+                        output += traceback.format_exc()
+                        send_error_message(output)
                         continue
                     if timeDifference.days > 30:
                         del self.servers[server][channel][user]
