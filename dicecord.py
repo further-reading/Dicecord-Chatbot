@@ -11,6 +11,7 @@ import traceback
 import re
 import json
 from error_logger import send_error_message
+from tokens import saver, token
 
 SPLATS = ['mage', 'default']
 
@@ -525,3 +526,7 @@ def checkConnection(host='8.8.8.8', port=53, timeout=53):
         except:
             send_error_message(f"No Connection still at {datetime.datetime.now()}")
             time.sleep(300)
+
+
+if __name__ == '__main__':
+    runner(token, saver)
