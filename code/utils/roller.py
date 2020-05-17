@@ -1,6 +1,7 @@
 import random
-import messaging
+from utils import messaging
 import re
+
 
 class Roller:
     rolls = []
