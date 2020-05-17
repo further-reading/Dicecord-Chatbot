@@ -23,6 +23,7 @@ class CustomEncoder(json.JSONEncoder):
             return o.strftime('%Y-%m-%d')
         return json.JSONEncoder.default(self, o)
 
+
 def jsonKeys2int(x):
     if isinstance(x, dict):
         return {int(k) if k.isdigit() else k: v for k, v in x.items()}
@@ -47,9 +48,9 @@ class DicecordBot:
         async def on_ready():
             """Print details and update server count when bot comes online."""
             content = 'Logged in as'
-            content += '\n' + self.client.user.name
-            content += '\n' + self.client.user.id
-            content += '\n' + str(datetime.datetime.now())
+            content += f'\n{self.client.user.name}'
+            content += f'\n{self.client.user.id}'
+            content += f'\n{datetime.datetime.now()}'
             send_error_message(content)
             await self.client.change_presence(activity=discord.Game(name='PM "help" for commands'))
 
