@@ -9,3 +9,4 @@ venv/
 tokens.py
 notes_to_self.txt
 error_logger.py
+dicecord.db
