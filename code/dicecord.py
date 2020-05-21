@@ -2,8 +2,6 @@ import discord
 import time
 import asyncio
 import datetime
-from xml.etree.ElementTree import ParseError
-from xml.etree import ElementTree as etree
 import socket
 import traceback
 import re
@@ -13,6 +11,7 @@ from utils.error_logger import send_error_message
 from utils.tokens import saver, token
 from utils import textResponses
 from utils.roller import Roller
+import dbhelpers
 
 SPLATS = ['mage', 'default']
 
@@ -31,14 +30,10 @@ def jsonKeys2int(x):
 
 
 class DicecordBot:
-    def __init__(self, token, me):
+    def __init__(self, token, me, dbpath):
         self.token = token
         self.me = me
-        self.servers = {}
-        try:
-            self.readServers()
-        except FileNotFoundError:
-            pass
+        self.dbpath = dbpath
 
     def startBot(self):
         self.loop = asyncio.new_event_loop()
@@ -69,6 +64,10 @@ class DicecordBot:
             tb = traceback.format_exc()
             self.errorText(message, tb)
             return
+        except dbhelpers.db.Error:
+            tb = traceback.format_exc()
+            self.errorText(message, tb)
+            send_error_message(f'SQL error\n{tb}')
 
     async def send(self, content, message, dm=False):
         if dm:
@@ -86,7 +85,6 @@ class DicecordBot:
         command = message.content.lower()
         if str(message.author) == self.me and "save-cod" in command:
             # allows me to ask for a save of current settings at any time
-            self.save_details()
             await self.send(f'servers:{len(self.client.guilds)}', message)
             await self.client.change_presence(game=discord.Game(name='PM "help" for commands'))
             return
@@ -98,7 +96,8 @@ class DicecordBot:
             await self.pmCommands(message)
             return
 
-        character = self.check_server(message)
+        flavour, splat = dbhelpers.get_flavour(message, self.dbpath)
+        character = {'flavour': flavour, 'splat': splat}
         prefix = self.get_prefix(message)
         if prefix == '@mention':
             # we only want bot to respond to @mentions
@@ -106,7 +105,7 @@ class DicecordBot:
             if not re.search(pattern, command):
                 return
         else:
-            if not command.startswith(character.prefix):
+            if not command.startswith(prefix):
                 return
 
         roller = Roller.from_dict(character)
@@ -251,129 +250,9 @@ class DicecordBot:
             if matched is not None:
                 return int(matched.group())
 
-    def readServers(self):
-        try:
-            with open('details.json', 'r', encoding='UTF8') as json_file:
-                self.servers = json.load(json_file, object_hook=jsonKeys2int)
-        except FileNotFoundError:
-            # First run of new json version
-            # Use legacy xml code
-            self.readServersXML()
-            return
-
-    def readServersXML(self):
-        servers = {}
-
-        try:
-            dom = etree.parse("details.xml")
-        except ParseError:
-            self.servers = {}
-            return
-        except FileNotFoundError:
-            self.servers = {}
-            return
-
-        servs = dom.findall('server')
-
-        for server in servs:
-            server_id = server.find('name').text
-            servers[server_id] = {}
-            channels = server.findall('channel')
-
-            for channel in channels:
-                channel_id = channel.find('name').text
-                servers[server_id][channel_id] = {}
-                users = channel.findall('user')
-
-                for user in users:
-                    user_id = user.find('name').text
-                    lasttime = user.find('time').text
-                    try:
-                        lasttime = datetime.datetime.strptime(lasttime, "%Y-%m-%d %H:%M:%S.%f")
-                    except ValueError:
-                        lasttime = datetime.datetime.strptime(lasttime, "%Y-%m-%d %H:%M:%S")
-                    splat = user.find('splat').text
-                    flavour = user.find('flavour').text
-
-                    char = {
-                        'splat': splat,
-                        'flavour': flavour,
-                        'last_roll': lasttime,
-                    }
-
-                    servers[int(server_id)][int(channel_id)][int(user_id)] = char
-
-        self.servers = servers
-
-    def check_server(self, message):
-        """Helper function that finds character object associated with a user."""
-        server = message.guild.id
-        channel = message.channel.id
-        author = message.author.id
-        if str(message.guild) == "Under the Black Flag":  # being lazy and setting my game to mage
-            self.servers[server] = {
-                channel: {
-                    author: {
-                        'splat': 'mage',
-                        'flavour': True,
-                        'last_roll': datetime.datetime.now(),
-                    },
-                }
-            }
-
-            return {'splat': 'mage', 'flavour': True}
-        if server in self.servers:
-            # check if channel is known
-            if channel in self.servers[server]:
-                # check if player is known
-                if author in self.servers[server][channel]:
-                    # update command time and return character
-                    self.servers[server][channel][author]['last_roll'] = datetime.datetime.now()
-                    return self.servers[server][channel][author]
-
-                else:  # if player not known make new entry
-                    char = {'splat': None,
-                            'flavour': True,
-                            'last_roll': datetime.datetime.now(),
-                            }
-                    self.servers[server][channel][author] = char
-            else:  # make a new channel entry
-                char = {'splat': None,
-                        'flavour': True,
-                        'last_roll': datetime.datetime.now(),
-                        }
-                self.servers[server][channel] = {author: char, 'prefix': '@mention'}
-
-        else:  # make new server entry
-            char = {'splat': None,
-                    'flavour': True,
-                    'last_roll': datetime.datetime.now(),
-                    }
-            self.servers[server] = {channel: {author: char, 'prefix': '@mention'}}
-        return char
-
     def get_prefix(self, message):
-        server = message.guild.id
-        channel = message.channel.id
-        prefix = self.servers.get(server, {}).get(channel, {}).get('prefix', '@mention')
-        return prefix
-
-    def set_prefix(self, message):
-        # get prefix from message
-        prefix = self.extract_prefix(message)
-        server = message.guild.id
-        channel = message.channel.id
-
-        if server in self.servers:
-            # check if channel is known
-            if channel in self.servers[server]:
-                self.servers[server][channel]['prefix'] = prefix
-            else:
-                self.servers[server][channel] = {'prefix': prefix}
-        else:
-            self.servers[server] = {channel: {'prefix': prefix}}
-
-        return f'Command prefix has been set to {prefix} - start messages with `prefix`'
+        # not yet implemented
+        return '@mention'
 
     def extract_prefix(self, message):
         # command of form '[current_prefix] prefix {new_prefix}'
@@ -386,17 +265,17 @@ class DicecordBot:
     def set_splat(self, message):
         """Allows user to set game type for flavour text."""
 
-        char = self.check_server(message)
         if "check" in message.content.lower():
-            if char['splat']:
-                return f"Splat for [userID] is currently set to {char['splat'].upper()} in server {message.guild} - #{message.channel}"
+            _, splat = dbhelpers.get_flavour(message, self.dbpath)
+            if splat:
+                return f"Splat for [userID] is currently set to {splat} in server {message.guild} - #{message.channel}"
             else:
                 return f"Splat for [userID] is currently not set in server {str(message.guild)} - {str(message.channel)}"
 
         else:
             new_splat = self.find_splat(message.content.lower())
             if new_splat:
-                char['splat'] = new_splat
+                dbhelpers.set_flavour(message, new_splat, self.dbpath)
                 return f'Flavour for [userID] changed to {new_splat} in server {message.guild} - #{message.channel}'
             else:
                 return 'Unsupported splat selected. Only mage supported at this time.'
@@ -408,83 +287,41 @@ class DicecordBot:
 
     def set_flavour(self, message):
         """Allows user to set existence of flavour text."""
-        char = self.check_server(message)
         setting = message.content.lower()
         if 'off' in setting:
-            char['flavour'] = False
+            dbhelpers.set_flavour(message, 'off', self.dbpath)
             return f"Flavour turned off in server {str(message.guild)} - {str(message.channel)}"
 
         elif 'on' in setting:
-            char['flavour'] = True
+            dbhelpers.set_flavour(message, 'on', self.dbpath)
             return f"Flavour turned on in server {str(message.guild)} - {str(message.channel)}"
 
         elif 'check' in setting:
-            if char['flavour']:
+            flavour, _ = dbhelpers.get_flavour(message, self.dbpath)
+            if flavour:
                 return f"Flavour turned on in server {str(message.guild)} - {str(message.channel)}"
             else:
                 return f"Flavour turned off in server {str(message.guild)} - {str(message.channel)}"
 
     def delete_content(self, message):
-        self.check_server(message)
+
         if "user" in message.content:
-            del self.servers[str(message.guild.id)][str(message.channel.id)][str(message.author.id)]
-            return f"Details for [userID] removed from {str(message.guild)} - {str(message.channel)}"
+            scope = 'user'
+            output = f"Details for [userID] removed from {str(message.guild)} - {str(message.channel)}"
 
         elif "channel" in message.content:
-            del self.servers[str(message.guild.id)][str(message.channel.id)]
-            return f"All details for channel **{str(message.channel)}** removed from **{str(message.guild)}** by [userID]"
+            scope = 'channel'
+            output = f"All details for channel **{str(message.channel)}** removed from **{str(message.guild)}** by [userID]"
 
         elif "server" in message.content:
-            del self.servers[str(message.guild.id)]
-            return f"All details for all channels removed from **{str(message.guild)}** by [userID]"
+            scope = 'server'
+            output = f"All details for all channels removed from **{str(message.guild)}** by [userID]"
 
-    def save_details(self):
-        """Save current server settings"""
-        # remove characters who have not been used in more than 30 days
-        # after the character loop it removes all empty channels
-        # after channel loop it removes all empty servers
-        for server in list(self.servers):
-            for channel in list(self.servers[server]):
-                for user in list(self.servers[server][channel]):
-                    char = self.servers[server][channel][user]
-                    if type(char) == str:
-                        # save prefix setting - this is another value in dictionary
-                        # TODO handle saving of prefix setting
-                        continue
-                    last_roll = char.get('last_roll', datetime.datetime.now())
-                    try:
-                        timeDifference = datetime.datetime.now() - last_roll
-                    except TypeError:
-                        # last roll time in string format
-                        # happens during first roll after start up
-                        last_roll = datetime.datetime.strptime(
-                            last_roll,
-                            '%Y-%m-%d',
-                        )
-                        timeDifference = datetime.datetime.now() - last_roll
-                    except:
-                        output = f'Unable to caclulate timespan for {last_roll} - {type(last_roll)}\n\n'
-                        output += traceback.format_exc()
-                        send_error_message(output)
-                        continue
-                    if timeDifference.days > 30:
-                        del self.servers[server][channel][user]
-                if not self.servers[server][channel]:
-                    del self.servers[server][channel]
-                elif len(self.servers[server][channel]) == 1 and 'prefix' in self.servers[server][channel]:
-                    # only entry left is the prefix setting - channel is no longer active
-                    del self.servers[server][channel]
-            if not self.servers[server]:
-                del self.servers[server]
+        else:
+            return
 
-        # save anyone who remains
-        with open('details.json', 'w', encoding='utf8') as json_file:
-            json.dump(
-                self.servers,
-                json_file,
-                ensure_ascii=False,
-                cls=CustomEncoder,
-            )
+        dbhelpers.delete_content(message, scope, self.dbpath)
+        return output
 
     def errorText(self, message, error):
         content = f'''Time: {datetime.datetime.now()}
@@ -493,18 +330,16 @@ Server: {message.guild}
 Channel: {message.channel}
 Author: {message.author}
 Error: 
-{error}
-              '''
+{error}'''
         send_error_message(content)
 
 
-def runner(token, me):
+def runner(token, me, dbpath):
     """Helper function to run. Handles connection reset errors by automatically running again."""
     bot = None
     while True:
         try:
-            bot = DicecordBot(token, me)
-            bot.readServers()
+            bot = DicecordBot(token, me, dbpath)
             bot.startBot()
             bot.client.run(bot.token)
         except:
@@ -512,10 +347,8 @@ def runner(token, me):
             send_error_message(f'Potential disconnect\n\n{tb}')
             if bot:
                 bot.loop.close()
-                bot.save_details()
             checkConnection()
         if bot:
-            bot.save_details()
             bot.loop.close()
 
 
@@ -533,4 +366,6 @@ def checkConnection(host='8.8.8.8', port=53, timeout=53):
 
 
 if __name__ == '__main__':
-    runner(token, saver)
+    # get dbpath from sys args
+    dbpath = ''
+    runner(token, saver, dbpath)
