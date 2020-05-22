@@ -27,7 +27,6 @@ def create_tables(dbpath):
 
 
 def get_flavour(message, dbpath):
-    update_last_roll(params, cursor, conn)
     conn, cursor = connect(dbpath)
     # search table
     params = {
@@ -56,7 +55,14 @@ def update_last_roll(params, cursor, conn):
                      channel = :channel AND
                      player = :player"""
     cursor.execute(query, params)
+    if not cursor.rowcount:
+        # entry not in table yet
+        query = """INSERT INTO players (server, channel, player, last_roll) 
+                       VALUES (:server, :channel, :player, :now)"""
+        cursor.execute(query, params)
+
     conn.commit()
+
 
 
 def clear_inactive_records(dbpath):
