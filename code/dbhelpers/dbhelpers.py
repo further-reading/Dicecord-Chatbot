@@ -126,7 +126,7 @@ def set_splat(message, setting, dbpath):
 
 def delete_content(message, level, dbpath):
     conn, cursor = connect(dbpath)
-    if level == 'player':
+    if level == 'user':
         query = """DELETE FROM players
                            WHERE server = :server AND
                                  channel = :channel AND

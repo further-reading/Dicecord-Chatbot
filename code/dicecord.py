@@ -69,6 +69,10 @@ class DicecordBot:
             tb = traceback.format_exc()
             self.errorText(message, tb)
             send_error_message(f'SQL error\n{tb}')
+        except:
+            tb = traceback.format_exc()
+            self.errorText(message, tb)
+            self.errorText(message, f'Unknown error\n{tb}')
 
     async def send(self, content, message, dm=False):
         if dm:
@@ -276,7 +280,7 @@ class DicecordBot:
         else:
             new_splat = self.find_splat(message.content.lower())
             if new_splat:
-                dbhelpers.set_flavour(message, new_splat, self.dbpath)
+                dbhelpers.set_splat(message, new_splat, self.dbpath)
                 return f'Flavour for [userID] changed to {new_splat} in server {message.guild} - #{message.channel}'
             else:
                 return 'Unsupported splat selected. Only mage supported at this time.'
