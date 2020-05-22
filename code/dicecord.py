@@ -6,6 +6,7 @@ import socket
 import traceback
 import re
 import json
+import sys
 
 from utils.error_logger import send_error_message
 from utils.tokens import saver, token
@@ -96,7 +97,8 @@ class DicecordBot:
             await self.pmCommands(message)
             return
 
-        flavour, splat = dbhelpers.get_flavour(message, self.dbpath)
+        # flavour, splat = dbhelpers.get_flavour(message, self.dbpath)
+        flavour, splat = (1, None)
         character = {'flavour': flavour, 'splat': splat}
         prefix = self.get_prefix(message)
         if prefix == '@mention':
@@ -266,19 +268,21 @@ class DicecordBot:
         """Allows user to set game type for flavour text."""
 
         if "check" in message.content.lower():
-            _, splat = dbhelpers.get_flavour(message, self.dbpath)
+            # _, splat = dbhelpers.get_flavour(message, self.dbpath)
+            splat = 'default'
             if splat:
                 return f"Splat for [userID] is currently set to {splat} in server {message.guild} - #{message.channel}"
             else:
                 return f"Splat for [userID] is currently not set in server {str(message.guild)} - {str(message.channel)}"
 
         else:
-            new_splat = self.find_splat(message.content.lower())
-            if new_splat:
-                dbhelpers.set_flavour(message, new_splat, self.dbpath)
-                return f'Flavour for [userID] changed to {new_splat} in server {message.guild} - #{message.channel}'
-            else:
-                return 'Unsupported splat selected. Only mage supported at this time.'
+            return f'Splat changing currently disabled'
+            # new_splat = self.find_splat(message.content.lower())
+            # if new_splat:
+            #     dbhelpers.set_flavour(message, new_splat, self.dbpath)
+            #     return f'Flavour for [userID] changed to {new_splat} in server {message.guild} - #{message.channel}'
+            # else:
+            #     return 'Unsupported splat selected. Only mage supported at this time.'
 
     def find_splat(self, message):
         for splat in SPLATS:
@@ -287,41 +291,43 @@ class DicecordBot:
 
     def set_flavour(self, message):
         """Allows user to set existence of flavour text."""
-        setting = message.content.lower()
-        if 'off' in setting:
-            dbhelpers.set_flavour(message, 'off', self.dbpath)
-            return f"Flavour turned off in server {str(message.guild)} - {str(message.channel)}"
-
-        elif 'on' in setting:
-            dbhelpers.set_flavour(message, 'on', self.dbpath)
-            return f"Flavour turned on in server {str(message.guild)} - {str(message.channel)}"
-
-        elif 'check' in setting:
-            flavour, _ = dbhelpers.get_flavour(message, self.dbpath)
-            if flavour:
-                return f"Flavour turned on in server {str(message.guild)} - {str(message.channel)}"
-            else:
-                return f"Flavour turned off in server {str(message.guild)} - {str(message.channel)}"
+        return f"Flavour setting currently disabled"
+        # setting = message.content.lower()
+        # if 'off' in setting:
+        #     dbhelpers.set_flavour(message, 'off', self.dbpath)
+        #     return f"Flavour turned off in server {str(message.guild)} - {str(message.channel)}"
+        #
+        # elif 'on' in setting:
+        #     dbhelpers.set_flavour(message, 'on', self.dbpath)
+        #     return f"Flavour turned on in server {str(message.guild)} - {str(message.channel)}"
+        #
+        # elif 'check' in setting:
+        #     flavour, _ = dbhelpers.get_flavour(message, self.dbpath)
+        #     if flavour:
+        #         return f"Flavour turned on in server {str(message.guild)} - {str(message.channel)}"
+        #     else:
+        #         return f"Flavour turned off in server {str(message.guild)} - {str(message.channel)}"
 
     def delete_content(self, message):
+        return 'Content recording currently disabled'
 
-        if "user" in message.content:
-            scope = 'user'
-            output = f"Details for [userID] removed from {str(message.guild)} - {str(message.channel)}"
-
-        elif "channel" in message.content:
-            scope = 'channel'
-            output = f"All details for channel **{str(message.channel)}** removed from **{str(message.guild)}** by [userID]"
-
-        elif "server" in message.content:
-            scope = 'server'
-            output = f"All details for all channels removed from **{str(message.guild)}** by [userID]"
-
-        else:
-            return
-
-        dbhelpers.delete_content(message, scope, self.dbpath)
-        return output
+        # if "user" in message.content:
+        #     scope = 'user'
+        #     output = f"Details for [userID] removed from {str(message.guild)} - {str(message.channel)}"
+        #
+        # elif "channel" in message.content:
+        #     scope = 'channel'
+        #     output = f"All details for channel **{str(message.channel)}** removed from **{str(message.guild)}** by [userID]"
+        #
+        # elif "server" in message.content:
+        #     scope = 'server'
+        #     output = f"All details for all channels removed from **{str(message.guild)}** by [userID]"
+        #
+        # else:
+        #     return
+        #
+        # dbhelpers.delete_content(message, scope, self.dbpath)
+        # return output
 
     def errorText(self, message, error):
         content = f'''Time: {datetime.datetime.now()}
@@ -366,6 +372,10 @@ def checkConnection(host='8.8.8.8', port=53, timeout=53):
 
 
 if __name__ == '__main__':
-    # get dbpath from sys args
-    dbpath = ''
+    dbpath = sys.argv[1]
+    try:
+        dbhelpers.create_tables(dbpath)
+    except dbhelpers.db.OperationalError:
+        # table already exists
+        pass
     runner(token, saver, dbpath)

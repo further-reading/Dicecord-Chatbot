@@ -41,13 +41,7 @@ def test_get_flavour(dbpath):
 def test_get_flavour_default(dbpath):
     # Arrange
     expected = (1, None)
-    conn, cursor = dbhelpers.connect(dbpath)
-    query = """INSERT INTO players (server, channel, player)
-                   VALUES (10, 11, 12)"""
-    cursor.execute(query)
-    conn.commit()
-    cursor.close()
-    conn.close()
+
     message = MagicMock()
     message.guild.id = 10
     message.channel.id = 11
