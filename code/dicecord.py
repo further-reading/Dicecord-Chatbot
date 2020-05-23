@@ -91,6 +91,7 @@ class DicecordBot:
         if str(message.author) == self.me and "save-cod" in command:
             # used to update server count on discord bot list
             await self.send(f'servers:{len(self.client.guilds)}', message)
+            # sometimes activity goes away, use this as an opportunity to reset it
             await self.client.change_presence(game=discord.Game(name='PM "help" for commands'))
             return
 
