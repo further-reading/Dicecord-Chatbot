@@ -15,7 +15,7 @@ def create_tables(dbpath):
   channel INTEGER NOT NULL,
   player INTEGER,
   flavour INTEGER DEFAULT 1,
-  splat TEXT,
+  splat TEXT DEFAULT 'default',
   last_roll TEXT,
   PRIMARY KEY (server, channel, player)
 );"""
@@ -103,8 +103,6 @@ def set_flavour(message, setting, dbpath):
 
 
 def set_splat(message, setting, dbpath):
-    if setting == 'remove':
-        setting = None
     conn, cursor = connect(dbpath)
     query = """UPDATE players
                    SET splat = :setting

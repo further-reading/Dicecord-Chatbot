@@ -40,7 +40,7 @@ def test_get_flavour(dbpath):
 
 def test_get_flavour_default(dbpath):
     # Arrange
-    expected = (1, None)
+    expected = (1, 'default')
 
     message = MagicMock()
     message.guild.id = 10
@@ -95,8 +95,8 @@ def test_get_flavour_update_last_roll(mock_datetime, dbpath):
 def test_clear_inactive_records(mock_datetime, dbpath):
     # Arrange
     expected = [
-        (10, 11, 13, 1, None, '2020-05-30 12:34:56'),
-        (10, 11, 14, 1, None, '2020-05-01 12:34:56'),
+        (10, 11, 13, 1, 'default', '2020-05-30 12:34:56'),
+        (10, 11, 14, 1, 'default', '2020-05-01 12:34:56'),
     ]
     #  Insert fake data
     conn, cursor = dbhelpers.connect(dbpath)
@@ -193,39 +193,11 @@ def test_set_splat(dbpath):
     assert expected == actual[1]
 
 
-def test_unset_splat(dbpath):
-    # Arrange
-    expected = None
-    #  Insert fake data
-    conn, cursor = dbhelpers.connect(dbpath)
-    query = """INSERT INTO players (server, channel, player, flavour, splat)
-                               VALUES (10, 11, 12, 1, 'mage');"""
-
-    cursor.execute(query)
-    conn.commit()
-    cursor.close()
-    conn.close()
-
-    #  Create message mock
-    message = MagicMock()
-    message.guild.id = 10
-    message.channel.id = 11
-    message.author.id = 12
-    setting = 'remove'
-
-    # Actual
-    dbhelpers.set_splat(message, setting, dbpath)
-    actual = dbhelpers.get_flavour(message, dbpath)
-
-    # Assert
-    assert expected == actual[1]
-
-
 def test_delete_player(dbpath):
     # Arrange
     expected = [
-        (10, 11, 13, 1, None, None),
-        (10, 11, 14, 1, None, None),
+        (10, 11, 13, 1, 'default', None),
+        (10, 11, 14, 1, 'default', None),
     ]
 
     #  Insert fake data
@@ -251,7 +223,7 @@ def test_delete_player(dbpath):
     message.author.id = 12
 
     # Actual
-    dbhelpers.delete_content(message, 'player', dbpath)
+    dbhelpers.delete_content(message, 'user', dbpath)
 
     # Assert
     #  Get new values
@@ -269,7 +241,7 @@ def test_delete_player(dbpath):
 def test_delete_channel(dbpath):
     # Arrange
     expected = [
-        (10, 11, 14, 1, None, None),
+        (10, 11, 14, 1, 'default', None),
     ]
 
     #  Insert fake data
@@ -313,7 +285,7 @@ def test_delete_channel(dbpath):
 def test_delete_server(dbpath):
     # Arrange
     expected = [
-        (10, 12, 12, 1, None, None),
+        (10, 12, 12, 1, 'default', None),
     ]
 
     #  Insert fake data
