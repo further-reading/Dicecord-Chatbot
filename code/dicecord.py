@@ -126,19 +126,17 @@ class DicecordBot:
             else:
                 try:
                     results = self.parse_roll(roller, command)
-                except RuntimeError:
-                    tb = traceback.format_exc()
-                    self.errorText(message, f"No dice amount found\n\n{tb}")
-                    return
                 except:
                     tb = traceback.format_exc()
                     self.errorText(message, f"Unknown error\n\n{tb}")
                     return
-
-                for result in results:
-                    out = result.replace('[userID]', "{0.author.mention}")
-                    await self.send(out.format(message), message)
-                    time.sleep(1)
+                if results:
+                    for result in results:
+                        out = result.replace('[userID]', "{0.author.mention}")
+                        await self.send(out.format(message), message)
+                        time.sleep(1)
+                else:
+                    await self.send("Sorry {0.author.mention} I cannot find a number of dice".format(message), message)
 
         elif 'splat' in command:
             out = self.set_splat(message)
