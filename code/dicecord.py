@@ -92,7 +92,7 @@ class DicecordBot:
             # used to update server count on discord bot list
             await self.send(f'servers:{len(self.client.guilds)}', message)
             # sometimes activity goes away, use this as an opportunity to reset it
-            await self.client.change_presence(game=discord.Game(name='PM "help" for commands'))
+            await self.client.change_presence(activity=discord.Game(name='PM "help" for commands'))
             return
 
         if message.author.bot:
