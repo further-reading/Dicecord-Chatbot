@@ -88,8 +88,8 @@ class DicecordBot:
 
     async def checkCommand(self, message):
         command = message.content.lower()
-        if str(message.author) == self.me and "save-cod" in command:
-            # allows me to ask for a save of current settings at any time
+        if str(message.author) == self.me and "save-CoD" in command:
+            # used to update server count on discord bot list
             await self.send(f'servers:{len(self.client.guilds)}', message)
             await self.client.change_presence(game=discord.Game(name='PM "help" for commands'))
             return
