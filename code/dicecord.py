@@ -59,6 +59,9 @@ class DicecordBot:
         if message.author == self.client.user:
             return
 
+        if message.author.bot:
+            return
+
         try:
             await self.checkCommand(message)
         except TypeError:
@@ -102,8 +105,6 @@ class DicecordBot:
             await self.pmCommands(message)
             return
 
-        flavour, splat = dbhelpers.get_flavour(message, self.dbpath)
-        character = {'flavour': flavour, 'splat': splat}
         prefix = self.get_prefix(message)
         if prefix == '@mention':
             # we only want bot to respond to @mentions
@@ -114,8 +115,10 @@ class DicecordBot:
             if not command.startswith(prefix):
                 return
 
-        roller = Roller.from_dict(character)
         if 'roll' in command:
+            flavour, splat = dbhelpers.get_flavour(message, self.dbpath)
+            character = {'flavour': flavour, 'splat': splat}
+            roller = Roller.from_dict(character)
             if "chance" in command:
                 results = roller.roll_chance(paradox="paradox" in command)
                 for result in results:
