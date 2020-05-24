@@ -59,9 +59,6 @@ class DicecordBot:
         if message.author == self.client.user:
             return
 
-        if message.author.bot:
-            return
-
         try:
             await self.checkCommand(message)
         except TypeError:
