@@ -167,11 +167,9 @@ class DicecordBot:
                 await self.send(out, message)
 
         elif "prefix" in command:
-            # disabled for now
-            return
-            # out = self.set_prefix(message)
-            # out = out.replace('[userID]', "{0.author.mention}")
-            # await self.send(out, message)
+            out = self.set_prefix(message)
+            out = out.replace('[userID]', "{0.author.mention}")
+            await self.send(out, message)
 
     async def pmCommands(self, message):
         command = message.content.lower()
@@ -264,12 +262,18 @@ class DicecordBot:
         prefix = dbhelpers.get_prefix(message, self.dbpath)
         return prefix
 
+    def set_prefix(self, message):
+        new_prefix = self.extract_prefix(message)
+        if new_prefix:
+            dbhelpers.set_prefix(new_prefix, message, self.dbpath)
+            return f"Prefix changed by [userID] to **{new_prefix}** in server {message.guild} - #{message.channel}"
+
     def extract_prefix(self, message):
-        # command of form '[current_prefix] prefix {new_prefix}'
-        text = message.clean_content.lower()
-        command_index = text.index('prefix')
-        end_index = command_index + len('prefix')
-        prefix = text[end_index:].strip()
+        # command of form 'prefix {new_prefix}'
+        text = message.content
+        prefix = re.search(r'prefix \b(\S+)\b', text)
+        if prefix:
+            prefix = prefix.group(1)
         return prefix
 
     def set_splat(self, message):
