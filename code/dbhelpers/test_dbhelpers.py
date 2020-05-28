@@ -353,13 +353,6 @@ def test_get_prefix(dbpath):
 def test_get_prefix_default(dbpath):
     # arrange
     expected = '@mention'
-    query = """INSERT INTO prefixes (server, channel)
-                               VALUES (10, 12);"""
-    conn, cursor = dbhelpers.connect(dbpath)
-    cursor.execute(query)
-    conn.commit()
-    cursor.close()
-    conn.close()
 
     #  Create message mock
     message = MagicMock()
