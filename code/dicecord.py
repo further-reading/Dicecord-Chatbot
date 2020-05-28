@@ -105,14 +105,20 @@ class DicecordBot:
         prefix = self.get_prefix(message)
         if prefix == '@mention':
             # we only want bot to respond to @mentions
-            pattern = f'<@!?{self.client.user.id}>'
-            if not re.search(pattern, command):
+            if self.client.user not in message.mentions:
                 return
         else:
-            if not command.startswith(prefix):
+            if not re.search(f'^{prefix}\b', command):
                 return
+            else:
+                command = re.sub(f'^{prefix}\b', command, '')
 
         if 'roll' in command:
+            if 'roll one' in command:
+                out = Roller.roll_special()
+                await self.send(out.format(message), message)
+                return
+
             flavour, splat = dbhelpers.get_flavour(message, self.dbpath)
             character = {'flavour': flavour, 'splat': splat}
             roller = Roller.from_dict(character)
@@ -255,8 +261,8 @@ class DicecordBot:
                 return int(matched.group())
 
     def get_prefix(self, message):
-        # not yet implemented
-        return '@mention'
+        prefix = dbhelpers.get_prefix(message, self.dbpath)
+        return prefix
 
     def extract_prefix(self, message):
         # command of form '[current_prefix] prefix {new_prefix}'
