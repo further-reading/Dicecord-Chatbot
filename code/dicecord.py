@@ -265,6 +265,8 @@ class DicecordBot:
     def set_prefix(self, message):
         new_prefix = self.extract_prefix(message)
         if new_prefix:
+            if new_prefix == 'reset':
+                new_prefix = None
             dbhelpers.set_prefix(new_prefix, message, self.dbpath)
             return f"Prefix changed by [userID] to **{new_prefix}** in server {message.guild} - #{message.channel}"
 

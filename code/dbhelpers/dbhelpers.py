@@ -158,6 +158,7 @@ def delete_content(message, level, dbpath):
     cursor.close()
     conn.close()
 
+
 def get_prefix(message, dbpath):
     conn, cursor = connect(dbpath)
     params = {
@@ -187,13 +188,17 @@ def set_prefix(prefix, message, dbpath):
     params = {
         'server': message.guild.id,
         'channel': message.channel.id,
-        'prefix': prefix,
     }
-
-    query = """UPDATE prefixes
-               SET prefix = :prefix
-               WHERE server = :server AND 
-                     channel = :channel;"""
+    if prefix:
+        params['prefix'] = prefix
+        query = """UPDATE prefixes
+                   SET prefix = :prefix
+                   WHERE server = :server AND 
+                         channel = :channel;"""
+    else:
+        query = """DELETE FROM prefixes
+                   WHERE server = :server AND 
+                         channel = :channel;"""
 
     cursor.execute(query, params)
     cursor.close()

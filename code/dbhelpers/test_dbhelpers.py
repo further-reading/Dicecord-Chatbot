@@ -392,3 +392,40 @@ def test_set_prefix(dbpath):
 
     # assert
     assert expected == actual
+
+
+def test_reset_prefix(dbpath):
+    # arrange
+    expected = [
+        (10, 12, '!boop'),
+    ]
+
+    query = """INSERT INTO prefixes
+               VALUES (10, 12, '!boop');"""
+    conn, cursor = dbhelpers.connect(dbpath)
+    cursor.execute(query)
+
+    query = """INSERT INTO prefixes
+               VALUES (10, 13, '!dice');"""
+    cursor.execute(query)
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    #  Create message mock
+    message = MagicMock()
+    message.guild.id = 10
+    message.channel.id = 13
+
+    # actual
+    dbhelpers.set_prefix(None, message, dbpath)
+    conn, cursor = dbhelpers.connect(dbpath)
+    query = """SELECT * FROM prefixes;"""
+    cursor.execute(query)
+    actual = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    # assert
+    assert expected == actual
