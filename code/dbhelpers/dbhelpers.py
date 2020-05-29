@@ -174,8 +174,6 @@ def get_prefix(message, dbpath):
     prefix = cursor.fetchone()
     if prefix:
         prefix = prefix[0]
-    else:
-        prefix = '@mention'
 
     cursor.close()
     conn.close()
