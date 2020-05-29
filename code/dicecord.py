@@ -87,8 +87,7 @@ class DicecordBot:
             self.errorText(message, tb)
 
     async def checkCommand(self, message):
-        command = message.content.lower()
-        if str(message.author) == self.me and "save-cod" in command:
+        if str(message.author) == self.me and "save-cod" in message.content.lower():
             # used to update server count on discord bot list
             await self.send(f'servers:{len(self.client.guilds)}', message)
             # sometimes activity goes away, use this as an opportunity to reset it
@@ -102,139 +101,97 @@ class DicecordBot:
             await self.pmCommands(message)
             return
 
-        prefix = self.get_prefix(message)
-        if prefix == '@mention':
-            # we only want bot to respond to @mentions
-            if self.client.user not in message.mentions:
-                return
-        else:
-            if not re.search(f'^{prefix}\b', command):
-                return
-            else:
-                command = re.sub(f'^{prefix}\b', command, '')
+        command = self.format_command(message)
+        if not command:
+            return
 
+        out = None
         if 'roll' in command:
-            if 'roll one' in command:
-                out = Roller.roll_special()
-                await self.send(out.format(message), message)
-                return
+            out = self.handle_roll(message, command)
 
+        elif 'splat' in command:
+            out = self.set_splat(message)
+
+        elif 'flavour' in command:
+            out = self.set_flavour(message)
+
+        elif "delete" in command:
+            out = self.delete_content(message)
+
+        elif "prefix" in command:
+            out = self.set_prefix(message)
+
+        if out is not None:
+            out = out.replace('[userID]', "{0.author.mention}")
+            out = out.format(message)
+            await self.send(out, message)
+
+    def format_command(self, message):
+        command = message.content.lower()
+        prefix = dbhelpers.get_prefix(message, self.dbpath)
+        if self.client.user in message.mentions:
+            # always reply when @mentioned
+            return command
+
+        if prefix and re.search(f'^{prefix}\b', command):
+            return re.sub(f'^{prefix}\b', command, '')
+
+    async def handle_roll(self, message, command):
+        """Checks text for type of roll, makes that roll."""
+        out = None
+        if 'roll one' in command:
+            out = Roller.roll_special()
+        else:
             flavour, splat = dbhelpers.get_flavour(message, self.dbpath)
             character = {'flavour': flavour, 'splat': splat}
             roller = Roller.from_dict(character)
             if "chance" in command:
                 results = roller.roll_chance(paradox="paradox" in command)
-                for result in results:
-                    # {0.author.mention} works better for bot implementation
-                    out = result.replace('[userID]', "{0.author.mention}")
-                    await self.send(out.format(message), message)
-                    time.sleep(1)
+                results = '\n'.format(results)
+                out = results.replace('[userID]', "{0.author.mention}")
+
+            # elif 'roll pool' in command:   # For later
 
             else:
-                try:
-                    results = self.parse_roll(roller, command)
-                except:
-                    tb = traceback.format_exc()
-                    self.errorText(message, f"Unknown error\n\n{tb}")
+                again = self.get_again_amount(command)
+                dice_amount = self.getDiceAmount(command)
+
+                if dice_amount is None:
+                    # stop if no dice number found
                     return
-                if results:
-                    for result in results:
-                        out = result.replace('[userID]', "{0.author.mention}")
-                        await self.send(out.format(message), message)
-                        time.sleep(1)
-                else:
-                    await self.send("Sorry {0.author.mention} I cannot find a number of dice".format(message), message)
 
-        elif 'splat' in command:
-            out = self.set_splat(message)
-            if out:
-                out = out.replace('[userID]', "{0.author.mention}")
-                out = out.format(message)
-                await self.send(out, message)
+                if dice_amount >= 50:
+                    return ["Too many dice. Please roll less than 50."]
 
-        elif 'flavour' in command:
-            out = self.set_flavour(message)
-            if out:
-                out = out.replace('[userID]', "{0.author.mention}")
-                out = out.format(message)
-                await self.send(out, message)
+                out =  roller.roll_set(
+                    dice_amount,
+                    again=again,
+                    rote="rote" in message,
+                    paradox="paradox" in message,
+                )
 
-        elif "delete" in command:
-            out = self.delete_content(message)
-            if out:
-                out = out.replace('[userID]', "{0.author.mention}")
-                out = out.format(message)
-                await self.send(out, message)
+        if out:
+            await self.send(out.format(message), message)
 
-        elif "prefix" in command:
-            out = self.set_prefix(message)
-            out = out.replace('[userID]', "{0.author.mention}")
-            await self.send(out, message)
-
-    async def pmCommands(self, message):
-        command = message.content.lower()
-
-        if 'type' in command:
-            content = textResponses.typetext
-
-        elif 'flavourhelp' in command:
-            content = textResponses.flavText
-
-        elif 'help' in command:
-            content = textResponses.helptext
-
-        elif 'info' in command:
-            content = textResponses.aboutText
-
+    def get_again_amount(self, command):
+        again_term = re.search("(8|9|no)again", command)
+        if again_term:
+            again = again_term.group(0)
+            if again == '8again':
+                again = 8
+            elif again == '9again':
+                again = 9
+            elif again == 'noagain':
+                again = 11
         else:
-            content = "Write 'help' for help, 'info' for bot info or 'type' for list of roll types"
+            again = 10
+        return again
 
-        await self.send(content, message)
-
-    def parse_roll(self, roller, message):
-        """Checks text for type of roll, makes that roll."""
-
-        message = message.strip()
-        message = message.lower()
-
-        againterm = re.search("(8|9|no)again", message)
-        if againterm:
-            again = againterm.group(0)
-        else:
-            again = None
-
-        diceAmount = self.getDiceAmount(message, again)
-
-        if diceAmount is None:
-            # stop if no dice number found
-            return
-
-        if diceAmount >= 50:
-            return ["Too many dice. Please roll less than 50."]
-
-        if again:
-            if again =='8again':
-                return roller.roll_set(diceAmount, again=8, rote="rote" in message, paradox="paradox" in message)
-
-            elif again =='9again':
-                return roller.roll_set(diceAmount, again=9, rote="rote" in message, paradox="paradox" in message)
-
-            elif again =='noagain':
-                # no again sets again to 11 so it is impossible to occur
-                return roller.roll_set(diceAmount, again=11, rote="rote" in message, paradox="paradox" in message)
-
-        elif "rote" in message:
-            return roller.roll_set(diceAmount, rote=True, paradox="paradox" in message)
-
-        elif 'roll' in message:
-            return roller.roll_set(diceAmount, paradox="paradox" in message)
-
-    def getDiceAmount(self, messageText, again):
-        """
+    def getDiceAmount(self, messageText):
+        """Gets the amount of dice to roll
 
         Args:
             messageText (str): text of message
-            again (str or None): whether it is an again term
 
         Returns (int or None): amount of dice to roll
         """
@@ -245,22 +202,21 @@ class DicecordBot:
             if matched:
                 return int(matched.group(1))
 
+        again = re.search("(8|9|no)again", messageText)
         if again:
             # Second check for message of the form againTerm x
             matched = re.search(f'(?<=\\b{again} )[0-9]+\\b', messageText)
             if matched:
                 return int(matched.group())
+            else:
+                messageText = messageText.replace(again, '')
 
         # Check for first number after @mention and then first number in message
-        splitMessage = re.split(f'<@{self.client.user.id}>', messageText)
+        splitMessage = messageText.split(f'{self.client.user.id}')
         for message in splitMessage[::-1]:
             matched = re.search(r'\b\d+\b', message)
             if matched is not None:
                 return int(matched.group())
-
-    def get_prefix(self, message):
-        prefix = dbhelpers.get_prefix(message, self.dbpath)
-        return prefix
 
     def set_prefix(self, message):
         new_prefix = self.extract_prefix(message)
@@ -347,6 +303,26 @@ Author: {message.author}
 Error: 
 {error}'''
         send_error_message(content)
+
+    async def pmCommands(self, message):
+        command = message.content.lower()
+
+        if 'type' in command:
+            content = textResponses.typetext
+
+        elif 'flavourhelp' in command:
+            content = textResponses.flavText
+
+        elif 'help' in command:
+            content = textResponses.helptext
+
+        elif 'info' in command:
+            content = textResponses.aboutText
+
+        else:
+            content = "Write 'help' for help, 'info' for bot info or 'type' for list of roll types"
+
+        await self.send(content, message)
 
 
 def runner(token, me, dbpath):
