@@ -303,8 +303,11 @@ Error:
         elif 'info' in command:
             content = textResponses.aboutText
 
+        elif 'prefix' in command:
+            content = textResponses.prefixHelp
+
         else:
-            content = "Write 'help' for help, 'info' for bot info or 'type' for list of roll types"
+            content = "Write 'help' for help, 'info' for bot info, 'type' for list of roll types"
 
         await self.send(content, message)
 
