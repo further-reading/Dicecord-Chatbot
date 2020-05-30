@@ -136,42 +136,42 @@ class DicecordBot:
         if prefix and re.search(f'^{prefix}\b', command):
             return re.sub(f'^{prefix}\b', command, '')
 
-    async def handle_roll(self, message, command):
+    def handle_roll(self, message, command):
         """Checks text for type of roll, makes that roll."""
-        out = None
         if 'roll one' in command:
-            out = Roller.roll_special()
+            return Roller.roll_special()
+
+        flavour, splat = dbhelpers.get_flavour(message, self.dbpath)
+        character = {'flavour': flavour, 'splat': splat}
+        roller = Roller.from_dict(character)
+        if "chance" in command:
+            results = roller.roll_chance(paradox="paradox" in command)
+            results = '\n'.join(results)
+            return results
+
+        # elif 'roll pool' in command:   # For later
+
         else:
-            flavour, splat = dbhelpers.get_flavour(message, self.dbpath)
-            character = {'flavour': flavour, 'splat': splat}
-            roller = Roller.from_dict(character)
-            if "chance" in command:
-                results = roller.roll_chance(paradox="paradox" in command)
-                results = '\n'.format(results)
-                out = results.replace('[userID]', "{0.author.mention}")
+            again = self.get_again_amount(command)
+            dice_amount = self.getDiceAmount(command)
+            print(again, dice_amount)
 
-            # elif 'roll pool' in command:   # For later
+            if dice_amount is None:
+                # stop if no dice number found
+                return
 
+            if dice_amount >= 50:
+                return "Too many dice. Please roll less than 50."
             else:
-                again = self.get_again_amount(command)
-                dice_amount = self.getDiceAmount(command)
-
-                if dice_amount is None:
-                    # stop if no dice number found
-                    return
-
-                if dice_amount >= 50:
-                    return ["Too many dice. Please roll less than 50."]
-
-                out =  roller.roll_set(
+                results =  roller.roll_set(
                     dice_amount,
                     again=again,
-                    rote="rote" in message,
-                    paradox="paradox" in message,
+                    rote="rote" in command,
+                    paradox="paradox" in command,
                 )
+                results = '\n'.join(results)
+                return results
 
-        if out:
-            await self.send(out.format(message), message)
 
     def get_again_amount(self, command):
         again_term = re.search("(8|9|no)again", command)
@@ -204,6 +204,7 @@ class DicecordBot:
 
         again = re.search("(8|9|no)again", messageText)
         if again:
+            again = again.group()
             # Second check for message of the form againTerm x
             matched = re.search(f'(?<=\\b{again} )[0-9]+\\b', messageText)
             if matched:
