@@ -5,7 +5,6 @@ import datetime
 import socket
 import traceback
 import re
-import json
 import sys
 
 from utils.error_logger import send_error_message
@@ -14,19 +13,6 @@ from utils import textResponses
 from utils.roller import Roller
 from utils.messaging import SPLATS
 import dbhelpers
-
-
-class CustomEncoder(json.JSONEncoder):
-    def default(self, o):
-        if isinstance(o, datetime.datetime):
-            return o.strftime('%Y-%m-%d')
-        return json.JSONEncoder.default(self, o)
-
-
-def jsonKeys2int(x):
-    if isinstance(x, dict):
-        return {int(k) if k.isdigit() else k: v for k, v in x.items()}
-    return x
 
 
 class DicecordBot:
