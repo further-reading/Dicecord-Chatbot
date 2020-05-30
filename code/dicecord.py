@@ -12,9 +12,8 @@ from utils.error_logger import send_error_message
 from utils.tokens import saver, token
 from utils import textResponses
 from utils.roller import Roller
+from utils.messaging import SPLATS
 import dbhelpers
-
-SPLATS = ['mage', 'default']
 
 
 class CustomEncoder(json.JSONEncoder):
