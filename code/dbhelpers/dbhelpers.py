@@ -189,10 +189,8 @@ def set_prefix(prefix, message, dbpath):
     }
     if prefix:
         params['prefix'] = prefix
-        query = """UPDATE prefixes
-                   SET prefix = :prefix
-                   WHERE server = :server AND 
-                         channel = :channel;"""
+        query = """REPLACE INTO prefixes
+                   VALUES (:server, :channel, :prefix);"""
     else:
         query = """DELETE FROM prefixes
                    WHERE server = :server AND 

@@ -352,7 +352,7 @@ def test_get_prefix(dbpath):
 
 def test_get_prefix_default(dbpath):
     # arrange
-    expected = '@mention'
+    expected = None
 
     #  Create message mock
     message = MagicMock()
@@ -375,6 +375,28 @@ def test_set_prefix(dbpath):
     conn.commit()
     cursor.close()
     conn.close()
+
+    #  Create message mock
+    message = MagicMock()
+    message.guild.id = 10
+    message.channel.id = 12
+
+    # actual
+    dbhelpers.set_prefix(expected, message, dbpath)
+    conn, cursor = dbhelpers.connect(dbpath)
+    query = """SELECT prefix FROM prefixes;"""
+    cursor.execute(query)
+    actual = cursor.fetchone()[0]
+    cursor.close()
+    conn.close()
+
+    # assert
+    assert expected == actual
+
+
+def test_set_new_prefix(dbpath):
+    # arrange
+    expected = '!stuff'
 
     #  Create message mock
     message = MagicMock()
