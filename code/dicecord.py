@@ -133,8 +133,8 @@ class DicecordBot:
             # always reply when @mentioned
             return command
 
-        if prefix and re.search(f'^{prefix}\b', command):
-            return re.sub(f'^{prefix}\b', command, '')
+        if prefix and command.startswith(prefix + ' '):
+            return command.replace(prefix, '', 1)
 
     def handle_roll(self, message, command):
         """Checks text for type of roll, makes that roll."""
@@ -154,7 +154,6 @@ class DicecordBot:
         else:
             again = self.get_again_amount(command)
             dice_amount = self.getDiceAmount(command)
-            print(again, dice_amount)
 
             if dice_amount is None:
                 # stop if no dice number found
@@ -171,7 +170,6 @@ class DicecordBot:
                 )
                 results = '\n'.join(results)
                 return results
-
 
     def get_again_amount(self, command):
         again_term = re.search("(8|9|no)again", command)
@@ -230,7 +228,7 @@ class DicecordBot:
     def extract_prefix(self, message):
         # command of form 'prefix {new_prefix}'
         text = message.content
-        prefix = re.search(r'prefix \b(\S+)\b', text)
+        prefix = re.search(r'prefix (\S+)', text)
         if prefix:
             prefix = prefix.group(1)
         return prefix
