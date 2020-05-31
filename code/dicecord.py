@@ -91,19 +91,19 @@ class DicecordBot:
             return
 
         out = None
-        if 'roll' in command:
+        if ' roll ' in command:
             out = self.handle_roll(message, command)
 
-        elif 'splat' in command:
+        elif ' splat ' in command:
             out = self.set_splat(message)
 
-        elif 'flavour' in command:
+        elif ' flavour ' in command:
             out = self.set_flavour(message)
 
-        elif "delete" in command:
+        elif " delete " in command:
             out = self.delete_content(message)
 
-        elif "prefix" in command:
+        elif " prefix " in command:
             out = self.set_prefix(message)
 
         if out is not None:
