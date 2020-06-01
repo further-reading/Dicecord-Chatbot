@@ -44,7 +44,8 @@ For more info, write **flavourhelp** to me here.
 
 You can also change the prefix for your commands. Write **prefixhelp** here for more info.
 
-Type **info** to me here to general bot information.'''
+Type **info** to me here to general bot information.
+Support Dicecord on Patreon: https://www.patreon.com/further_reading'''
 
 prefixHelp = '''"@Dicecord-Cod prefix new_prefix" will allow you to set a prefix for the bot to respond to. 
 Note that the bot will still respond to @mentions when this is active.
@@ -63,4 +64,5 @@ aboutText = '''Dicecord-CoD is a python based bot for rolling dice following the
 (c) Roy Healy. Dicecord (TM). Distributed under GNU General Public License v3.0.
 Built using Discord.py package and running on Python 3.6.
 See https://github.com/further-reading/discord-dirceroller-bot for source code.
-Join us on Discord! https://discordapp.com/invite/DRM9MT8'''
+Join us on Discord! https://discordapp.com/invite/DRM9MT8
+Support Dicecord on Patreon: https://www.patreon.com/further_reading'''
