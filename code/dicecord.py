@@ -12,6 +12,7 @@ from utils.tokens import saver, token
 from utils import textResponses
 from utils.roller import Roller
 from utils.messaging import SPLATS
+from utils.patreon_helper import get_credits
 import dbhelpers
 
 
@@ -302,6 +303,9 @@ Error:
 
         elif 'info' in command:
             content = textResponses.aboutText
+            patrons = get_credits()
+            if patrons:
+                content += f'\n\nSpecial thanks to our Patreon patrons\n{patrons}'
 
         elif 'prefix' in command:
             content = textResponses.prefixHelp
