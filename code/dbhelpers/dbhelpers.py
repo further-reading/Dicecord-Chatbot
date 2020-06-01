@@ -10,7 +10,7 @@ def connect(dbpath):
 
 def create_tables(dbpath):
     conn, cursor = connect(dbpath)
-    query = """CREATE TABLE players (
+    query1 = """CREATE TABLE IF NOT EXISTS players (
   server INTEGER NOT NULL,
   channel INTEGER NOT NULL,
   player INTEGER,
@@ -19,8 +19,19 @@ def create_tables(dbpath):
   last_roll TEXT,
   PRIMARY KEY (server, channel, player)
 );"""
-    # prefix table creation will go here
-    cursor.execute(query)
+    cursor.execute(query1)
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    conn, cursor = connect(dbpath)
+    query2 = """CREATE TABLE IF NOT EXISTS prefixes (
+  server INTEGER NOT NULL,
+  channel INTEGER NOT NULL,
+  prefix TEXT DEFAULT '@mention',
+  PRIMARY KEY (server, channel)
+);"""
+    cursor.execute(query2)
     conn.commit()
     cursor.close()
     conn.close()
@@ -149,5 +160,43 @@ def delete_content(message, level, dbpath):
 
 
 def get_prefix(message, dbpath):
-    # NYI
-    pass
+    conn, cursor = connect(dbpath)
+    params = {
+        'server': message.guild.id,
+        'channel': message.channel.id,
+    }
+
+    query = """SELECT prefix FROM prefixes
+               WHERE server = :server AND
+                     channel = :channel"""
+
+    cursor.execute(query, params)
+    prefix = cursor.fetchone()
+    if prefix:
+        prefix = prefix[0]
+
+    cursor.close()
+    conn.close()
+
+    return prefix
+
+
+def set_prefix(prefix, message, dbpath):
+    conn, cursor = connect(dbpath)
+    params = {
+        'server': message.guild.id,
+        'channel': message.channel.id,
+    }
+    if prefix:
+        params['prefix'] = prefix
+        query = """REPLACE INTO prefixes
+                   VALUES (:server, :channel, :prefix);"""
+    else:
+        query = """DELETE FROM prefixes
+                   WHERE server = :server AND 
+                         channel = :channel;"""
+
+    cursor.execute(query, params)
+    cursor.close()
+    conn.commit()
+    conn.close()

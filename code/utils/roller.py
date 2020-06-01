@@ -170,12 +170,13 @@ class Roller:
         else:
             return 0
     
-    def roll_special(self):
+    @staticmethod
+    def roll_special():
         """
         Roll a single die
         Returns (str): Result of roll
         """
-        value = random.randrange(1, 11)
+        value = random.randint(1, 10)
         return "[userID] rolled a " + str(value) + "!"
 
     def roll_chance(self, paradox=False):

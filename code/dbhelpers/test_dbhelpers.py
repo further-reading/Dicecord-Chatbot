@@ -21,8 +21,8 @@ def test_get_flavour(dbpath):
     # Arrange
     expected = (1, 'mage')
     conn, cursor = dbhelpers.connect(dbpath)
-    query = """INSERT INTO players
-               VALUES (10, 11, 12, 1, 'mage', 'n/a')"""
+    query = """INSERT INTO players (server, channel, player, flavour, splat)
+               VALUES (10, 11, 12, 1, 'mage')"""
     cursor.execute(query)
     conn.commit()
     cursor.close()
@@ -323,4 +323,131 @@ def test_delete_server(dbpath):
     conn.close()
 
     assert len(expected) == len(actual)
+    assert expected == actual
+
+
+def test_get_prefix(dbpath):
+    # arrange
+    expected = '!!roll'
+    #  Insert fake data
+    conn, cursor = dbhelpers.connect(dbpath)
+    query = """INSERT INTO prefixes (server, channel, prefix)
+                           VALUES (10, 12, '!!roll');"""
+    cursor.execute(query)
+    cursor.close()
+    conn.commit()
+    conn.close()
+
+    #  Create message mock
+    message = MagicMock()
+    message.guild.id = 10
+    message.channel.id = 12
+
+    # actual
+    actual = dbhelpers.get_prefix(message, dbpath)
+
+    # assert
+    assert expected == actual
+
+
+def test_get_prefix_default(dbpath):
+    # arrange
+    expected = None
+
+    #  Create message mock
+    message = MagicMock()
+    message.guild.id = 10
+    message.channel.id = 12
+
+    # actual
+    actual = dbhelpers.get_prefix(message, dbpath)
+    # assert
+    assert expected == actual
+
+
+def test_set_prefix(dbpath):
+    # arrange
+    expected = '!stuff'
+    query = """INSERT INTO prefixes (server, channel)
+                                   VALUES (10, 12);"""
+    conn, cursor = dbhelpers.connect(dbpath)
+    cursor.execute(query)
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    #  Create message mock
+    message = MagicMock()
+    message.guild.id = 10
+    message.channel.id = 12
+
+    # actual
+    dbhelpers.set_prefix(expected, message, dbpath)
+    conn, cursor = dbhelpers.connect(dbpath)
+    query = """SELECT prefix FROM prefixes;"""
+    cursor.execute(query)
+    actual = cursor.fetchone()[0]
+    cursor.close()
+    conn.close()
+
+    # assert
+    assert expected == actual
+
+
+def test_set_new_prefix(dbpath):
+    # arrange
+    expected = '!stuff'
+
+    #  Create message mock
+    message = MagicMock()
+    message.guild.id = 10
+    message.channel.id = 12
+
+    # actual
+    dbhelpers.set_prefix(expected, message, dbpath)
+    conn, cursor = dbhelpers.connect(dbpath)
+    query = """SELECT prefix FROM prefixes;"""
+    cursor.execute(query)
+    actual = cursor.fetchone()[0]
+    cursor.close()
+    conn.close()
+
+    # assert
+    assert expected == actual
+
+
+def test_reset_prefix(dbpath):
+    # arrange
+    expected = [
+        (10, 12, '!boop'),
+    ]
+
+    query = """INSERT INTO prefixes
+               VALUES (10, 12, '!boop');"""
+    conn, cursor = dbhelpers.connect(dbpath)
+    cursor.execute(query)
+
+    query = """INSERT INTO prefixes
+               VALUES (10, 13, '!dice');"""
+    cursor.execute(query)
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    #  Create message mock
+    message = MagicMock()
+    message.guild.id = 10
+    message.channel.id = 13
+
+    # actual
+    dbhelpers.set_prefix(None, message, dbpath)
+    conn, cursor = dbhelpers.connect(dbpath)
+    query = """SELECT * FROM prefixes;"""
+    cursor.execute(query)
+    actual = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    # assert
     assert expected == actual

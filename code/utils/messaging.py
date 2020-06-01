@@ -1,3 +1,15 @@
+SPLATS = [
+    'mage',
+    'default',
+    # 'vampire',
+    # 'geist',
+    # 'changeling',
+    # 'hunter',
+    # 'werewolf',
+    # 'promethean',
+    # 'demon',
+]
+
 goodDefault = ["You should take the beat, [userID].",
                "Aren't I a good bot, [userID]?",
                "Did you hack me, [userID]?",
