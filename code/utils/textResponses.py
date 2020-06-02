@@ -50,6 +50,8 @@ Support Dicecord on Patreon: https://www.patreon.com/further_reading'''
 prefixHelp = '''"@Dicecord-Cod prefix new_prefix" will allow you to set a prefix for the bot to respond to. 
 Note that the bot will still respond to @mentions when this is active.
 
+To set a server wide prefix write "@Dicecord-Cod prefix server new_prefix". Note that a channel level prefix takes precedence over a server prefix.
+
 To remove a prefix write "@Dicecord-Cod prefix reset"'''
 
 flavText = '''To specify a splat write **@Dicecord-CoD splat *splat name***. For example: **@Dicecord-CoD splat mage** for Mage.
