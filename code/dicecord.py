@@ -204,20 +204,29 @@ class DicecordBot:
                 return int(matched.group())
 
     def set_prefix(self, message):
-        new_prefix = self.extract_prefix(message)
+        new_prefix, server_wide = self.extract_prefix(message)
         if new_prefix:
             if new_prefix == 'reset':
                 new_prefix = None
-            dbhelpers.set_prefix(new_prefix, message, self.dbpath)
-            return f"Prefix changed by [userID] to **{new_prefix}** in server {message.guild} - #{message.channel}"
+            dbhelpers.set_prefix(
+                new_prefix,
+                message,
+                self.dbpath,
+                server_wide,
+            )
+            if server_wide:
+                output = f"Server Prefix changed by [userID] to **{new_prefix}** in server {message.guild}"
+            else:
+                output = f"Prefix changed by [userID] to **{new_prefix}** in server {message.guild} - #{message.channel}"
+            return output
 
     def extract_prefix(self, message):
         # command of form 'prefix {new_prefix}'
         text = message.content
-        prefix = re.search(r'prefix (\S+)', text)
+        prefix = re.search(r'prefix(?: server)? (\S+)', text)
         if prefix:
             prefix = prefix.group(1)
-        return prefix
+        return prefix, ' server ' in message.content
 
     def set_splat(self, message):
         """Allows user to set game type for flavour text."""
