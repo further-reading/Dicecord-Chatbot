@@ -168,7 +168,8 @@ def get_prefix(message, dbpath):
 
     query = """SELECT prefix FROM prefixes
                WHERE server = :server AND
-                     channel = :channel"""
+                     (channel = :channel OR channel = 0)
+               ORDER BY channel DESC;"""
 
     cursor.execute(query, params)
     prefix = cursor.fetchone()
@@ -181,16 +182,21 @@ def get_prefix(message, dbpath):
     return prefix
 
 
-def set_prefix(prefix, message, dbpath):
+def set_prefix(prefix, message, dbpath, server_wide=False):
     conn, cursor = connect(dbpath)
     params = {
         'server': message.guild.id,
-        'channel': message.channel.id,
     }
+    if server_wide:
+        params['channel'] = 0
+    else:
+        params['channel'] = message.channel.id
+
     if prefix:
         params['prefix'] = prefix
         query = """REPLACE INTO prefixes
                    VALUES (:server, :channel, :prefix);"""
+
     else:
         query = """DELETE FROM prefixes
                    WHERE server = :server AND 
