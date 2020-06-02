@@ -451,3 +451,49 @@ def test_reset_prefix(dbpath):
 
     # assert
     assert expected == actual
+
+def test_set_server_prefix(dbpath):
+    # arrange
+    prefix = '!stuff'
+    expected = (prefix, 0)
+
+    #  Create message mock
+    message = MagicMock()
+    message.guild.id = 10
+    message.channel.id = 12
+
+    # actual
+    dbhelpers.set_prefix(prefix, message, dbpath, server_wide=True)
+    conn, cursor = dbhelpers.connect(dbpath)
+    query = """SELECT prefix, channel FROM prefixes;"""
+    cursor.execute(query)
+    actual = cursor.fetchone()
+    cursor.close()
+    conn.close()
+
+    # assert
+    assert expected == actual
+
+
+def test_get_server_prefix(dbpath):
+    # arrange
+    expected_server, expected_channel = '!server', '!channel'
+    #  Create message mocks
+    message1 = MagicMock()
+    message1.guild.id = 10
+    message1.channel.id = 12
+
+    message2 = MagicMock()
+    message2.guild.id = 10
+    message2.channel.id = 13
+
+    dbhelpers.set_prefix(expected_channel, message1, dbpath)
+    dbhelpers.set_prefix(expected_server, message2, dbpath, server_wide=True)
+
+    # actual
+    actual_channel = dbhelpers.get_prefix(message1, dbpath)
+    actual_server = dbhelpers.get_prefix(message2, dbpath)
+
+    # assert
+    assert expected_server == actual_server
+    assert expected_channel == actual_channel
