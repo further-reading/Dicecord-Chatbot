@@ -314,7 +314,7 @@ Error:
             content = textResponses.aboutText
             patrons = get_credits()
             if patrons:
-                content += f'\n\nSpecial thanks to our Patreon patrons\n{patrons}'
+                content += f'\n\n**Special thanks to our Patreon patrons**\n```\n{patrons}\n```'
 
         elif 'prefix' in command:
             content = textResponses.prefixHelp
