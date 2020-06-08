@@ -3,6 +3,7 @@ typetext = '''**rote**: a rote roll (failures rerolled once)
 **8again**: 8s explode!
 **noagain**: Nothing explodes!
 **chance**: Roll a chance die.
+**pool**: Calculates a pool from an equation.
 **one**: Just roll a single die with no flavour/success messaging.
 **paradox**: Use paradox flavour messaging (successes = bad)
 
@@ -11,11 +12,17 @@ Example:
 Rolls 8 dice. Not a rotes, 10s explode!
 @Dicecord-CoD roll 9again 5
 Rolls 5 dice, 9s and 10s explode!
+@Dicecord-CoD roll pool 5 + 3
+Rolls 8 dice
+@Dicecord-CoD roll pool 5 - 6
+Rolls a chance die.
 
 You can chain commands when relevant.
 
 @Dicecord-CoD roll 9again rote paradox 8
 Roll 8 dice with 9again + rote. Use paradox messaging. 
+@Dicecord-CoD roll pool 3 + 2 9again
+Roll 5 dice with 9again.
 
 Note that natural langauage commands can also work. It will figure out the amount to roll based on the following logic, where x is the amount of dice to roll:
 1. Looks for a phrase like "roll x"
