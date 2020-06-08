@@ -143,13 +143,9 @@ class DicecordBot:
             if 'roll pool' in command:
                 try:
                     dice_amount = self.get_pool(command)
-                    if dice_amount > 0:
-                        out = f'[UserID] is rolling {dice_amount} dice'
-                        self.send(out.replace('[userID]', "{0.author.mention}"), message)
-                    elif dice_amount < 1:
-                        out = f'[UserID] has a pool of {dice_amount} dice - chance roll'
-                        self.send(out.replace('[userID]', "{0.author.mention}"), message)
-                        results = roller.roll_chance(paradox="paradox" in command)
+                    if dice_amount < 1:
+                        results = [f'Calculated a pool of {dice_amount} dice - chance roll']
+                        results += roller.roll_chance(paradox="paradox" in command)
                         results = '\n'.join(results)
                         return results
 
