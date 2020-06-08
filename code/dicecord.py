@@ -143,6 +143,16 @@ class DicecordBot:
             if 'roll pool' in command:
                 try:
                     dice_amount = self.get_pool(command)
+                    if dice_amount > 0:
+                        out = f'[UserID] is rolling {dice_amount} dice'
+                        self.send(out.replace('[userID]', "{0.author.mention}"), message)
+                    elif dice_amount < 1:
+                        out = f'[UserID] has a pool of {dice_amount} dice - chance roll'
+                        self.send(out.replace('[userID]', "{0.author.mention}"), message)
+                        results = roller.roll_chance(paradox="paradox" in command)
+                        results = '\n'.join(results)
+                        return results
+
                 except PoolError:
                     return 'Too many values, please only include 10 or fewer terms.'
             else:
@@ -155,7 +165,7 @@ class DicecordBot:
             if dice_amount >= 50:
                 return "Too many dice. Please roll less than 50."
             else:
-                results =  roller.roll_set(
+                results = roller.roll_set(
                     dice_amount,
                     again=again,
                     rote="rote" in command,
@@ -211,7 +221,7 @@ class DicecordBot:
                 return int(matched.group())
 
     def get_pool(self, text):
-        regex_1 = r'pool (\d{1,2})'
+        regex_1 = r'pool (-?\d{1,2})'
         regex_2 = r'([+-] ?\d{1,2})'
         numbers = re.findall(f'{regex_1}', text)
         numbers += re.findall(f'{regex_2}', text)
