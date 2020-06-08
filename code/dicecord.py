@@ -16,6 +16,9 @@ from utils.patreon_helper import get_credits
 import dbhelpers
 
 
+class PoolError(Exception):
+    pass
+
 class DicecordBot:
     def __init__(self, token, me, dbpath):
         self.token = token
@@ -135,11 +138,15 @@ class DicecordBot:
             results = '\n'.join(results)
             return results
 
-        # elif 'roll pool' in command:   # For later
-
         else:
             again = self.get_again_amount(command)
-            dice_amount = self.getDiceAmount(command)
+            if 'roll pool' in command:
+                try:
+                    dice_amount = self.get_pool(command)
+                except PoolError:
+                    return 'Too many values, please only include 10 or fewer terms.'
+            else:
+                dice_amount = self.getDiceAmount(command)
 
             if dice_amount is None:
                 # stop if no dice number found
@@ -202,6 +209,17 @@ class DicecordBot:
             matched = re.search(r'\b\d+\b', message)
             if matched is not None:
                 return int(matched.group())
+
+    def get_pool(self, text):
+        regex_1 = r'pool (\d{1,2})'
+        regex_2 = r'([+-] ?\d{1,2})'
+        numbers = re.findall(f'{regex_1}', text)
+        numbers += re.findall(f'{regex_2}', text)
+        if len(numbers) > 10:
+            raise PoolError
+        numbers = ''.join(numbers)
+        pool = eval(numbers)
+        return pool
 
     def set_prefix(self, message):
         new_prefix, server_wide = self.extract_prefix(message)
