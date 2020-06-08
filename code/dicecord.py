@@ -144,6 +144,7 @@ class DicecordBot:
                 try:
                     dice_amount = self.get_pool(command)
                     if dice_amount < 1:
+                        # roll chance
                         results = [f'Calculated a pool of {dice_amount} dice - chance roll']
                         results += roller.roll_chance(paradox="paradox" in command)
                         results = '\n'.join(results)
