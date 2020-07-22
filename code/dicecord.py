@@ -16,6 +16,11 @@ from utils.patreon_helper import get_credits
 import dbhelpers
 
 
+class PoolError(Exception):
+    def __init__(self, message):
+        super().__init__()
+        self.message = message
+
 class DicecordBot:
     def __init__(self, token, me, dbpath):
         self.token = token
@@ -107,6 +112,15 @@ class DicecordBot:
         elif " prefix " in command:
             out = self.set_prefix(message)
 
+        elif command.endswith(' splat'):
+            out = self.check_splat(message)
+
+        elif command.endswith(' prefix'):
+            out = self.check_prefix(message)
+
+        elif command.endswith(' flavour'):
+            out = self.check_flavour(message)
+
         if out is not None:
             out = out.replace('[userID]', "{0.author.mention}")
             out = out.format(message)
@@ -135,11 +149,25 @@ class DicecordBot:
             results = '\n'.join(results)
             return results
 
-        # elif 'roll pool' in command:   # For later
-
         else:
+            results = []
             again = self.get_again_amount(command)
-            dice_amount = self.getDiceAmount(command)
+            if 'roll pool' in command:
+                try:
+                    dice_amount, expression = self.get_pool(command)
+                    if dice_amount < 1:
+                        # roll chance
+                        results = [f'Calculated a pool of `{expression}={dice_amount}` dice - chance roll']
+                        results += roller.roll_chance(paradox="paradox" in command)
+                        results = '\n'.join(results)
+                        return results
+                    else:
+                        results = [f'Calculated a pool of `{expression}={dice_amount}` dice']
+
+                except PoolError as e:
+                    return e.message
+            else:
+                dice_amount = self.getDiceAmount(command)
 
             if dice_amount is None:
                 # stop if no dice number found
@@ -148,7 +176,7 @@ class DicecordBot:
             if dice_amount >= 50:
                 return "Too many dice. Please roll less than 50."
             else:
-                results =  roller.roll_set(
+                results += roller.roll_set(
                     dice_amount,
                     again=again,
                     rote="rote" in command,
@@ -203,6 +231,19 @@ class DicecordBot:
             if matched is not None:
                 return int(matched.group())
 
+    def get_pool(self, text):
+        regex_1 = r'pool (-?\d{1,2})'
+        regex_2 = r'([+-] ?\d{1,2})'
+        numbers = re.findall(f'{regex_1}', text)
+        numbers += re.findall(f'{regex_2}', text)
+        if len(numbers) > 10:
+            raise PoolError(message='Too many values, please only include 10 or fewer terms.')
+        if not numbers:
+            raise PoolError(message='Pool expression could not be parsed.')
+        numbers = ''.join(numbers)
+        pool = eval(numbers)
+        return pool, numbers.replace(' ', '')
+
     def set_prefix(self, message):
         new_prefix, server_wide = self.extract_prefix(message)
         if new_prefix:
@@ -220,6 +261,14 @@ class DicecordBot:
                 output = f"Prefix changed by [userID] to **{new_prefix}** in server {message.guild} - #{message.channel}"
             return output
 
+    def check_prefix(self, message):
+        prefix = dbhelpers.get_prefix(message, self.dbpath)
+        if prefix:
+            output = f'Current prefix for this channel is `{prefix}`'
+        else:
+            output = 'There is no custom prefix set for this channel.'
+        return output
+
     def extract_prefix(self, message):
         # command of form 'prefix {new_prefix}'
         text = message.content
@@ -232,11 +281,7 @@ class DicecordBot:
         """Allows user to set game type for flavour text."""
 
         if "check" in message.content.lower():
-            _, splat = dbhelpers.get_flavour(message, self.dbpath)
-            if splat:
-                return f"Splat for [userID] is currently set to {splat} in server {message.guild} - #{message.channel}"
-            else:
-                return f"Splat for [userID] is currently not set in server {str(message.guild)} - {str(message.channel)}"
+            return self.check_splat(message)
 
         else:
             new_splat = self.find_splat(message.content.lower())
@@ -245,6 +290,13 @@ class DicecordBot:
                 return f'Flavour for [userID] changed to {new_splat} in server {message.guild} - #{message.channel}'
             else:
                 return 'Unsupported splat selected. Only mage supported at this time.'
+
+    def check_splat(self, message):
+        _, splat = dbhelpers.get_flavour(message, self.dbpath)
+        if splat:
+            return f"Splat for [userID] is currently set to {splat} in server {message.guild} - #{message.channel}"
+        else:
+            return f"Splat for [userID] is currently not set in server {str(message.guild)} - {str(message.channel)}"
 
     def find_splat(self, message):
         for splat in SPLATS:
@@ -263,11 +315,14 @@ class DicecordBot:
             return f"Flavour turned on in server {str(message.guild)} - {str(message.channel)}"
 
         elif 'check' in setting:
-            flavour, _ = dbhelpers.get_flavour(message, self.dbpath)
-            if flavour:
-                return f"Flavour turned on in server {str(message.guild)} - {str(message.channel)}"
-            else:
-                return f"Flavour turned off in server {str(message.guild)} - {str(message.channel)}"
+            return self.check_flavour(message)
+
+    def check_flavour(self, message):
+        flavour, _ = dbhelpers.get_flavour(message, self.dbpath)
+        if flavour:
+            return f"Flavour turned on in server {str(message.guild)} - {str(message.channel)}"
+        else:
+            return f"Flavour turned off in server {str(message.guild)} - {str(message.channel)}"
 
     def delete_content(self, message):
         if "user" in message.content:
@@ -349,11 +404,11 @@ def checkConnection(host='8.8.8.8', port=53, timeout=53):
         try:
             socket.setdefaulttimeout(timeout)
             socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
-            send_error_message("Reconnected")
             break
         except:
             send_error_message(f"No Connection still at {datetime.datetime.now()}")
             time.sleep(300)
+    send_error_message("Reconnected")
 
 
 if __name__ == '__main__':
