@@ -256,7 +256,10 @@ class DicecordBot:
 
     def check_prefix(self, message):
         prefix = dbhelpers.get_prefix(message, self.dbpath)
-        output = f'Current prefix for this channel is *{prefix}*'
+        if prefix:
+            output = f'Current prefix for this channel is *{prefix}*'
+        else:
+            output = 'There is no custom prefix set for this channel.'
         return output
 
     def extract_prefix(self, message):
