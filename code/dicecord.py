@@ -17,7 +17,9 @@ import dbhelpers
 
 
 class PoolError(Exception):
-    pass
+    def __init__(self, message):
+        super().__init__()
+        self.message = message
 
 class DicecordBot:
     def __init__(self, token, me, dbpath):
@@ -148,19 +150,22 @@ class DicecordBot:
             return results
 
         else:
+            results = []
             again = self.get_again_amount(command)
             if 'roll pool' in command:
                 try:
-                    dice_amount = self.get_pool(command)
+                    dice_amount, expression = self.get_pool(command)
                     if dice_amount < 1:
                         # roll chance
-                        results = [f'Calculated a pool of {dice_amount} dice - chance roll']
+                        results = [f'Calculated a pool of `{expression}={dice_amount}` dice - chance roll']
                         results += roller.roll_chance(paradox="paradox" in command)
                         results = '\n'.join(results)
                         return results
+                    else:
+                        results = [f'Calculated a pool of `{expression}={dice_amount}` dice']
 
-                except PoolError:
-                    return 'Too many values, please only include 10 or fewer terms.'
+                except PoolError as e:
+                    return e.message
             else:
                 dice_amount = self.getDiceAmount(command)
 
@@ -171,7 +176,7 @@ class DicecordBot:
             if dice_amount >= 50:
                 return "Too many dice. Please roll less than 50."
             else:
-                results = roller.roll_set(
+                results += roller.roll_set(
                     dice_amount,
                     again=again,
                     rote="rote" in command,
@@ -232,10 +237,12 @@ class DicecordBot:
         numbers = re.findall(f'{regex_1}', text)
         numbers += re.findall(f'{regex_2}', text)
         if len(numbers) > 10:
-            raise PoolError
+            raise PoolError(message='Too many values, please only include 10 or fewer terms.')
+        if not numbers:
+            raise PoolError(message='Pool expression could not be parsed.')
         numbers = ''.join(numbers)
         pool = eval(numbers)
-        return pool
+        return pool, numbers.replace(' ', '')
 
     def set_prefix(self, message):
         new_prefix, server_wide = self.extract_prefix(message)
