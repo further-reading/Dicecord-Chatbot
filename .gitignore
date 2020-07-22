@@ -6,6 +6,7 @@ Dicecord.png
 Dicecord-white.png
 details.json
 venv/
+dev/
 tokens.py
 notes_to_self.txt
 error_logger.py
