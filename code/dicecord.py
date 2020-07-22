@@ -98,7 +98,7 @@ class DicecordBot:
         if ' roll ' in command:
             out = self.handle_roll(message, command)
 
-        elif ' splat' in command:
+        elif ' splat ' in command:
             out = self.set_splat(message)
 
         elif ' flavour ' in command:
@@ -116,7 +116,7 @@ class DicecordBot:
         elif command.endswith(' prefix'):
             out = self.check_prefix(message)
 
-        elif command.endwith(' flavour'):
+        elif command.endswith(' flavour'):
             out = self.check_flavour(message)
 
         if out is not None:
@@ -257,7 +257,7 @@ class DicecordBot:
     def check_prefix(self, message):
         prefix = dbhelpers.get_prefix(message, self.dbpath)
         if prefix:
-            output = f'Current prefix for this channel is *{prefix}*'
+            output = f'Current prefix for this channel is `{prefix}`'
         else:
             output = 'There is no custom prefix set for this channel.'
         return output
