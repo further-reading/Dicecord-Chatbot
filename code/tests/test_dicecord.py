@@ -7,7 +7,7 @@ def test_get_pool():
     roller = DicecordBot(None, None, None)
     expected = 5
     # actual
-    actual = roller.get_pool(text)
+    actual, _ = roller.get_pool(text)
     # assert
     assert expected == actual
 
@@ -18,6 +18,6 @@ def test_get_pool_with_8again():
     roller = DicecordBot(None, None, None)
     expected = 5
     # actual
-    actual = roller.get_pool(text)
+    actual, _ = roller.get_pool(text)
     # assert
     assert expected == actual
