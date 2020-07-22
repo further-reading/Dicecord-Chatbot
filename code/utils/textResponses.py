@@ -33,6 +33,16 @@ Note that natural langauage commands can also work. It will figure out the amoun
 Example
 Hello @Dicecord-Cod can you roll 4 dice for me with 8again.
 Rolls 4 dice with 8again
+
+Finally, you can use pool to write an equation that will be calculated.
+The pool keyword must be after the roll command and it must be followed by the equation
+
+Example
+@Dicecord-Cod roll pool 5 + 3
+Rolls 8 dice
+
+You can add in agains+rotes too, but they must be before the roll command or after the end of the pool equation.
+If the calculation is 0 or less, it will roll a chance die automatically.
 '''
 
 helptext = '''**Commands must now include an @mention for the bot**
