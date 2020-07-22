@@ -98,7 +98,7 @@ class DicecordBot:
         if ' roll ' in command:
             out = self.handle_roll(message, command)
 
-        elif ' splat' in command or command.endswith(' splat'):
+        elif ' splat' in command:
             out = self.set_splat(message)
 
         elif ' flavour ' in command:
@@ -107,8 +107,17 @@ class DicecordBot:
         elif " delete " in command:
             out = self.delete_content(message)
 
-        elif " prefix " in command or command.endswith(' prefix'):
+        elif " prefix " in command:
             out = self.set_prefix(message)
+
+        elif command.endswith(' splat'):
+            out = self.check_splat(message)
+
+        elif command.endswith(' prefix'):
+            out = self.check_prefix(message)
+
+        elif command.endwith(' flavour'):
+            out = self.check_flavour(message)
 
         if out is not None:
             out = out.replace('[userID]', "{0.author.mention}")
@@ -229,9 +238,6 @@ class DicecordBot:
         return pool
 
     def set_prefix(self, message):
-        if message.endswith('prefix'):
-            # checking current prefixes
-            pass
         new_prefix, server_wide = self.extract_prefix(message)
         if new_prefix:
             if new_prefix == 'reset':
@@ -248,6 +254,11 @@ class DicecordBot:
                 output = f"Prefix changed by [userID] to **{new_prefix}** in server {message.guild} - #{message.channel}"
             return output
 
+    def check_prefix(self, message):
+        prefix = dbhelpers.get_prefix(message, self.dbpath)
+        output = f'Current prefix for this channel is *{prefix}*'
+        return output
+
     def extract_prefix(self, message):
         # command of form 'prefix {new_prefix}'
         text = message.content
@@ -259,12 +270,8 @@ class DicecordBot:
     def set_splat(self, message):
         """Allows user to set game type for flavour text."""
 
-        if "check" in message.content.lower() or message.content.endswith('splat'):
-            _, splat = dbhelpers.get_flavour(message, self.dbpath)
-            if splat:
-                return f"Splat for [userID] is currently set to {splat} in server {message.guild} - #{message.channel}"
-            else:
-                return f"Splat for [userID] is currently not set in server {str(message.guild)} - {str(message.channel)}"
+        if "check" in message.content.lower():
+            return self.check_splat(message)
 
         else:
             new_splat = self.find_splat(message.content.lower())
@@ -273,6 +280,13 @@ class DicecordBot:
                 return f'Flavour for [userID] changed to {new_splat} in server {message.guild} - #{message.channel}'
             else:
                 return 'Unsupported splat selected. Only mage supported at this time.'
+
+    def check_splat(self, message):
+        _, splat = dbhelpers.get_flavour(message, self.dbpath)
+        if splat:
+            return f"Splat for [userID] is currently set to {splat} in server {message.guild} - #{message.channel}"
+        else:
+            return f"Splat for [userID] is currently not set in server {str(message.guild)} - {str(message.channel)}"
 
     def find_splat(self, message):
         for splat in SPLATS:
@@ -291,11 +305,14 @@ class DicecordBot:
             return f"Flavour turned on in server {str(message.guild)} - {str(message.channel)}"
 
         elif 'check' in setting:
-            flavour, _ = dbhelpers.get_flavour(message, self.dbpath)
-            if flavour:
-                return f"Flavour turned on in server {str(message.guild)} - {str(message.channel)}"
-            else:
-                return f"Flavour turned off in server {str(message.guild)} - {str(message.channel)}"
+            return self.check_flavour(message)
+
+    def check_flavour(self, message):
+        flavour, _ = dbhelpers.get_flavour(message, self.dbpath)
+        if flavour:
+            return f"Flavour turned on in server {str(message.guild)} - {str(message.channel)}"
+        else:
+            return f"Flavour turned off in server {str(message.guild)} - {str(message.channel)}"
 
     def delete_content(self, message):
         if "user" in message.content:
