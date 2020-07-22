@@ -98,7 +98,7 @@ class DicecordBot:
         if ' roll ' in command:
             out = self.handle_roll(message, command)
 
-        elif ' splat ' in command:
+        elif ' splat' in command or command.endswith(' splat'):
             out = self.set_splat(message)
 
         elif ' flavour ' in command:
@@ -107,7 +107,7 @@ class DicecordBot:
         elif " delete " in command:
             out = self.delete_content(message)
 
-        elif " prefix " in command:
+        elif " prefix " in command or command.endswith(' prefix'):
             out = self.set_prefix(message)
 
         if out is not None:
@@ -229,6 +229,9 @@ class DicecordBot:
         return pool
 
     def set_prefix(self, message):
+        if message.endswith('prefix'):
+            # checking current prefixes
+            pass
         new_prefix, server_wide = self.extract_prefix(message)
         if new_prefix:
             if new_prefix == 'reset':
@@ -256,7 +259,7 @@ class DicecordBot:
     def set_splat(self, message):
         """Allows user to set game type for flavour text."""
 
-        if "check" in message.content.lower():
+        if "check" in message.content.lower() or message.content.endswith('splat'):
             _, splat = dbhelpers.get_flavour(message, self.dbpath)
             if splat:
                 return f"Splat for [userID] is currently set to {splat} in server {message.guild} - #{message.channel}"
@@ -374,11 +377,11 @@ def checkConnection(host='8.8.8.8', port=53, timeout=53):
         try:
             socket.setdefaulttimeout(timeout)
             socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
-            send_error_message("Reconnected")
             break
         except:
             send_error_message(f"No Connection still at {datetime.datetime.now()}")
             time.sleep(300)
+    send_error_message("Reconnected")
 
 
 if __name__ == '__main__':
