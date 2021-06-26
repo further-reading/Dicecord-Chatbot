@@ -8,6 +8,7 @@ SPLATS = [
     # 'werewolf',
     # 'promethean',
     # 'demon',
+    # 'arcane_tier',
 ]
 
 goodDefault = ["You should take the beat, [userID].",

@@ -41,7 +41,7 @@ class Roller:
         """
         if splat == 'mage':
             self.splat = 'mage'
-            self.goodMessages =  messaging.goodDefault.copy() + messaging.goodMage.copy()
+            self.goodMessages = messaging.goodDefault.copy() + messaging.goodMage.copy()
             self.badMessages = messaging.badDefault.copy() + messaging.badMage.copy()
 
             return "Splat set to Mage in "
@@ -71,7 +71,7 @@ class Roller:
 
         self.rolls = []
         successes = 0
-        
+
         # fail collector in case it is a rote
         fails = []
 
@@ -107,7 +107,7 @@ class Roller:
                 out += " " + value
 
         messages.append(out)
-        
+
         # check for positive or negative message
         if self.flavour and not paradox:
             if successes == 0:
@@ -117,9 +117,9 @@ class Roller:
         elif self.flavour and paradox:
             if successes != 0:
                 messages.append(self.bot_message("paradox"))
-        
+
         return messages
-        
+
     def bot_message(self, messagetype):
         """
         Sends a random positive/negative message with very good or very bad rolls
@@ -137,7 +137,7 @@ class Roller:
             out = random.choice(self.paradoxFail)
 
         return out
-            
+
     def roll_die(self, again=10, explode_reroll=False, rote_reroll=False):
         """
         Rolls a single die, calculates number of successes and updates self.rolls
@@ -169,7 +169,7 @@ class Roller:
             return 1
         else:
             return 0
-    
+
     @staticmethod
     def roll_special():
         """
