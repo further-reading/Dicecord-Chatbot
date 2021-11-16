@@ -32,7 +32,7 @@ You can also DM it the following commands to repeat these instructions.
 * **"type"** - Replies to with the types of rolls available.  
 
 ## Information Saving
-Splat and flavour settings are specific to each channel on your server. For example, if I have a #Mage channel and a #Vampire channel I could have different settings in each.
+Splat and flavour settings are specific to each channel on your server. For example, if I have a #Mage channel and a #Vampire channel I could have different settings in each. The settings saved determine which flavour to attribute to a user id in a channel id, no usernames or message content is saved. 
 
 In addition, users can opt to delete their stored settings at any time. To do so write **!delete user** in the channel you want to delete information from. There are also commands to delete all players' settings from a channel or server, **!delete channel** or **!delete server**. Please make sure other players are okay with you deleting their settings before using it. If a character does not roll over the course of 30 days their settings will be automatically purged.
 
