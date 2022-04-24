@@ -21,6 +21,7 @@ class PoolError(Exception):
         super().__init__()
         self.message = message
 
+
 class DicecordBot:
     def __init__(self, token, me, dbpath):
         self.token = token
@@ -43,27 +44,20 @@ class DicecordBot:
 
         @self.client.event
         async def on_message(message):
-            await self.on_message(message)
-
-    async def on_message(self, message):
-        # we do not want the bot to reply to itself
-        if message.author == self.client.user:
-            return
-
-        try:
-            await self.checkCommand(message)
-        except TypeError:
-            tb = traceback.format_exc()
-            self.errorText(message, tb)
-            return
-        except dbhelpers.db.Error:
-            tb = traceback.format_exc()
-            self.errorText(message, tb)
-            send_error_message(f'SQL error\n{tb}')
-        except:
-            tb = traceback.format_exc()
-            self.errorText(message, tb)
-            self.errorText(message, f'Unknown error\n{tb}')
+            try:
+                await self.checkCommand(message)
+            except TypeError:
+                tb = traceback.format_exc()
+                self.errorText(message, tb)
+                return
+            except dbhelpers.db.Error:
+                tb = traceback.format_exc()
+                self.errorText(message, tb)
+                send_error_message(f'SQL error\n{tb}')
+            except:
+                tb = traceback.format_exc()
+                self.errorText(message, tb)
+                self.errorText(message, f'Unknown error\n{tb}')
 
     async def send(self, content, message, dm=False):
         if dm:
@@ -97,29 +91,17 @@ class DicecordBot:
             return
 
         out = None
-        if ' roll ' in command:
+        if re.search(r"\broll\b", command):
             out = self.handle_roll(message, command)
 
-        elif ' splat ' in command:
+        elif re.search(r"\bsplat\b", command):
             out = self.set_splat(message)
 
-        elif ' flavour ' in command:
+        elif re.search(r"\bflavour\b", command):
             out = self.set_flavour(message)
 
-        elif " delete " in command:
+        elif re.search(r"\bdelete\b", command):
             out = self.delete_content(message)
-
-        elif " prefix " in command:
-            out = self.set_prefix(message)
-
-        elif command.endswith(' splat'):
-            out = self.check_splat(message)
-
-        elif command.endswith(' prefix'):
-            out = self.check_prefix(message)
-
-        elif command.endswith(' flavour'):
-            out = self.check_flavour(message)
 
         if out is not None:
             out = out.replace('[userID]', "{0.author.mention}")
@@ -128,13 +110,9 @@ class DicecordBot:
 
     def format_command(self, message):
         command = message.content.lower()
-        prefix = dbhelpers.get_prefix(message, self.dbpath)
         if self.client.user in message.mentions:
             # always reply when @mentioned
             return command
-
-        if prefix and command.startswith(prefix + ' '):
-            return command.replace(prefix, '', 1)
 
     def handle_roll(self, message, command):
         """Checks text for type of roll, makes that roll."""
@@ -148,6 +126,12 @@ class DicecordBot:
             results = roller.roll_chance(paradox="paradox" in command)
             results = '\n'.join(results)
             return results
+
+        if re.search(r"\binit \d+", command):
+            matches = re.search(r"\binit (?P<modifier>\d+)", command)
+            modifier = int(matches.group("modifier"))
+            results = roller.roll_initiative(modifier)
+            return '\n'.join(results)
 
         else:
             results = []
@@ -179,7 +163,7 @@ class DicecordBot:
                 results += roller.roll_set(
                     dice_amount,
                     again=again,
-                    rote="rote" in command,
+                    rote=re.search(r"\brote\b", command),
                     paradox="paradox" in command,
                 )
                 results = '\n'.join(results)
@@ -349,7 +333,7 @@ Message: {message.clean_content}
 Server: {message.guild}
 Channel: {message.channel}
 Author: {message.author}
-Error: 
+Error:
 {error}'''
         send_error_message(content)
 
