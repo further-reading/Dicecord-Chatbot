@@ -208,3 +208,14 @@ class Roller:
                 messages.append(self.bot_message("bad"))
 
         return messages
+
+    def roll_initiative(self, modifier):
+        value = random.randint(1, 10)
+        result = value + modifier
+        messages = [f"[userID]'s initiative is {result} ({modifier} + Roll:{value})"]
+        if self.flavour:
+            if value == 10:
+                messages.append(self.bot_message("good"))
+            elif value == 1:
+                messages.append(self.bot_message("bad"))
+        return messages
