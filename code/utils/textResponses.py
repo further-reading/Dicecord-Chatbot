@@ -6,16 +6,19 @@ typetext = '''**rote**: a rote roll (failures rerolled once)
 **pool**: Calculates a pool from an equation.
 **one**: Just roll a single die with no flavour/success messaging.
 **paradox**: Use paradox flavour messaging (successes = bad)
+**init**: Perform an initiative roll
 
 Example:
-@Dicecord-CoD roll 8
+`@Dicecord-CoD roll 8`
 Rolls 8 dice. Not a rotes, 10s explode!
-@Dicecord-CoD roll 9again 5
+`@Dicecord-CoD roll 9again 5`
 Rolls 5 dice, 9s and 10s explode!
-@Dicecord-CoD roll pool 5 + 3
+`@Dicecord-CoD roll pool 5 + 3`
 Rolls 8 dice
-@Dicecord-CoD roll pool 5 - 6
+`@Dicecord-CoD roll pool 5 - 6`
 Rolls a chance die.
+``@Dicecord-CoD roll init 5`
+Rolls a D10 and adds the result to 5.
 
 You can chain commands when relevant.
 
