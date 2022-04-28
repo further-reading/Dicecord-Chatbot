@@ -130,7 +130,7 @@ class DicecordBot:
             return results
 
         if re.search(r"\binit \d+", command):
-            matches = re.search(r"\binit (?P<modifier>\d+)", command)
+            matches = re.search(r"\binit (?P<modifier>[-+]?\d+)", command)
             modifier = int(matches.group("modifier"))
             results = roller.roll_initiative(modifier)
             return '\n'.join(results)
