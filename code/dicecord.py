@@ -74,7 +74,9 @@ class DicecordBot:
     async def checkCommand(self, message):
         if str(message.author) == self.me and "save-cod" in message.content.lower():
             # used to update server count on discord bot list
-            await self.send(f'servers:{len(self.client.guilds)}', message)
+            out = f'{{0.author.mention}} servers:{len(self.client.guilds)}'
+            out = out.format(message)
+            await self.send(out, message)
             # sometimes activity goes away, use this as an opportunity to reset it
             await self.client.change_presence(activity=discord.Game(name='PM "help" for commands'))
             return
